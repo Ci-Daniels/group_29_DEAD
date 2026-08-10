@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Estate Access &middot; Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar__brand">
+      <span class="navbar__logo">◈</span>
+      <span>Estate Access</span>
+    </div>
+    <div class="navbar__links">
+      <a href="{{ url_for('index') }}" class="navbar__link navbar__link--active">Dashboard</a>
+      <a href="{{ url_for('register_page') }}" class="navbar__link">Register</a>
+      <a href="{{ url_for('verify_page') }}" class="navbar__link">Verify</a>
+    </div>
+  </nav>
+
+  <main class="page">
+    <header class="page__header">
+      <h1>Digital Estate Assets Discovery</h1>
+      <p class="page__subtitle">Facial biometric enrollment and verification, powered by SCRFD + ArcFace.</p>
+    </header>
+
+    <section class="card-grid">
+      <a href="{{ url_for('register_page') }}" class="action-card">
+        <div class="action-card__icon action-card__icon--indigo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="8" r="4"></circle>
+            <path d="M4 20c0-4 4-6 8-6s8 2 8 6"></path>
+            <path d="M19 8h4M21 6v4"></path>
+          </svg>
+        </div>
+        <h3>Register Beneficiary</h3>
+        <p>Enroll a new beneficiary's face with ~20 guided samples.</p>
+        <span class="action-card__cta">Start registration →</span>
+      </a>
+
+      <a href="{{ url_for('verify_page') }}" class="action-card">
+        <div class="action-card__icon action-card__icon--teal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"></path>
+            <path d="M9 12l2 2 4-4"></path>
+          </svg>
+        </div>
+        <h3>Verify Beneficiary</h3>
+        <p>Confirm identity with a live liveness check and face match.</p>
+        <span class="action-card__cta">Start verification →</span>
+      </a>
+
+      <div class="action-card action-card--placeholder">
+        <div class="action-card__icon action-card__icon--slate">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="8" cy="9" r="3"></circle>
+            <path d="M2 20c0-3.3 2.7-5 6-5s6 1.7 6 5"></path>
+            <circle cx="17" cy="8" r="2.5"></circle>
+            <path d="M15.5 13c2.5 0 5 1.3 5.5 4"></path>
+          </svg>
+        </div>
+        <h3>Registered Beneficiaries</h3>
+        <p>Browse enrolled beneficiaries and their status.</p>
+        <span class="action-card__cta action-card__cta--muted">Coming soon</span>
+      </div>
+    </section>
+
+    <section class="status-panel">
+      <h2 class="status-panel__title">System Status</h2>
+      <div class="status-panel__grid">
+        <div class="status-item">
+          <span class="status-dot status-dot--on"></span>
+          <div>
+            <p class="status-item__label">AI Engine</p>
+            <p class="status-item__value">InsightFace (SCRFD + ArcFace)</p>
+          </div>
+        </div>
+        <div class="status-item">
+          <span class="status-dot status-dot--on"></span>
+          <div>
+            <p class="status-item__label">Runtime</p>
+            <p class="status-item__value">ONNX Runtime (CPU)</p>
+          </div>
+        </div>
+        <div class="status-item">
+          <span class="status-dot status-dot--on"></span>
+          <div>
+            <p class="status-item__label">Storage</p>
+            <p class="status-item__value">Local embeddings (data/embeddings)</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

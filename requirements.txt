@@ -1,0 +1,5 @@
+opencv-python>=4.9.0
+insightface>=0.7.3
+numpy>=1.26.0
+onnxruntime>=1.17.0
+flask

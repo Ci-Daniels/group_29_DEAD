@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Estate Access &middot; Register Beneficiary</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar__brand">
+      <span class="navbar__logo">◈</span>
+      <span>Estate Access</span>
+    </div>
+    <div class="navbar__links">
+      <a href="{{ url_for('index') }}" class="navbar__link">Dashboard</a>
+      <a href="{{ url_for('register_page') }}" class="navbar__link navbar__link--active">Register</a>
+      <a href="{{ url_for('verify_page') }}" class="navbar__link">Verify</a>
+    </div>
+  </nav>
+
+  <main class="page">
+    <header class="page__header">
+      <h1>Register Beneficiary</h1>
+      <p class="page__subtitle">Capture face n-samples to enroll a new beneficiary.</p>
+    </header>
+
+    <section class="workspace">
+      <form id="register-form" class="panel form-panel">
+        <h2 class="panel__title">Beneficiary Information</h2>
+
+        <label class="field">
+          <span class="field__label">Full Name</span>
+          <input type="text" name="name" required placeholder="e.g. Jane Doe" />
+        </label>
+
+        <label class="field">
+          <span class="field__label">Relationship</span>
+          <input type="text" name="relationship" required placeholder="e.g. Spouse, Child, Executor" />
+        </label>
+
+        <label class="field">
+          <span class="field__label">Phone</span>
+          <input type="tel" name="phone" placeholder="e.g. +1 555 123 4567" />
+        </label>
+
+        <label class="field">
+          <span class="field__label">Email</span>
+          <input type="email" name="email" placeholder="e.g. jane@example.com" />
+        </label>
+
+        <label class="field">
+          <span class="field__label">Beneficiary ID</span>
+          <input type="text" name="beneficiary_id" required placeholder="e.g. BEN-0001" />
+        </label>
+
+        <button type="submit" id="start-btn" class="btn btn--primary">
+          Start Enrollment
+        </button>
+
+        <p id="result-banner" class="result-banner" hidden></p>
+      </form>
+
+      <div class="panel preview-panel">
+        <h2 class="panel__title">Live Camera Preview</h2>
+
+        <div class="video-frame">
+          <div id="video-placeholder" class="video-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="6" width="14" height="12" rx="2"></rect>
+              <path d="M17 10l4-2v8l-4-2"></path>
+            </svg>
+            <p>Camera preview will appear here once enrollment starts.</p>
+          </div>
+          <img id="video-feed" class="video-feed" alt="Live camera preview" hidden />
+        </div>
+
+        <div class="status-strip">
+          <span class="status-dot status-dot--pulse"></span>
+          <div>
+            <p id="status-text" class="status-strip__status">Waiting to start...</p>
+            <p id="progress-text" class="status-strip__progress"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Consent modal: must be accepted before enrollment starts -->
+<div id="consent-modal" class="modal" hidden>
+  <div class="modal__card modal__card--consent">
+    <div class="modal__icon modal__icon--info">🔒</div>
+    <h2 class="modal__title">Biometric Data Consent</h2>
+    <p class="modal__subtitle">Please review before we begin capturing facial data.</p>
+
+    <div class="consent-text">
+      <p>
+        By continuing, you consent to the capture of facial biometric data
+        (camera images and derived face embeddings) for
+        <strong id="consent-name-placeholder">this beneficiary</strong>,
+        for the sole purpose of identity enrollment and future verification
+        within this Digital Estate Assets Discovery system.
+      </p>
+      <ul>
+        <li>Biometric data is stored locally and is not shared with third parties.</li>
+        <li>It is used only to verify identity for estate access, not for any other purpose.</li>
+        <li>You may request deletion of this data at any time.</li>
+      </ul>
+    </div>
+
+    <label class="consent-checkbox">
+      <input type="checkbox" id="consent-checkbox" />
+      <span>I have read and agree to the biometric data consent above.</span>
+    </label>
+
+    <div class="modal__actions">
+      <button id="consent-decline-btn" class="btn btn--ghost" type="button">Cancel</button>
+      <button id="consent-agree-btn" class="btn btn--primary" type="button" disabled>
+        I Agree &amp; Continue
+      </button>
+    </div>
+  </div>
+</div>
+  <script src="{{ url_for('static', filename='js/register.js') }}"></script>
+</body>
+</html>

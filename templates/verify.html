@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Estate Access &middot; Verify Beneficiary</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar__brand">
+      <span class="navbar__logo">◈</span>
+      <span>Estate Access</span>
+    </div>
+    <div class="navbar__links">
+      <a href="{{ url_for('index') }}" class="navbar__link">Dashboard</a>
+      <a href="{{ url_for('register_page') }}" class="navbar__link">Register</a>
+      <a href="{{ url_for('verify_page') }}" class="navbar__link navbar__link--active">Verify</a>
+    </div>
+  </nav>
+
+  <main class="page">
+    <header class="page__header">
+      <h1>Verify Beneficiary</h1>
+      <p class="page__subtitle">Confirm identity with a live liveness check and face match.</p>
+    </header>
+
+    <section class="workspace workspace--verify">
+      <div class="panel preview-panel preview-panel--large">
+        <div class="video-frame video-frame--large">
+          <div id="video-placeholder" class="video-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="6" width="14" height="12" rx="2"></rect>
+              <path d="M17 10l4-2v8l-4-2"></path>
+            </svg>
+            <p>Camera preview will appear here once verification starts.</p>
+          </div>
+          <img id="video-feed" class="video-feed" alt="Live camera preview" hidden />
+        </div>
+
+        <form id="verify-form" class="verify-form">
+          <label class="field field--inline">
+            <span class="field__label">Beneficiary ID</span>
+            <input type="text" name="beneficiary_id" required placeholder="e.g. BEN-0001" />
+          </label>
+          <button type="submit" id="start-btn" class="btn btn--primary">Start Verification</button>
+        </form>
+      </div>
+
+      <aside class="panel status-panel-card">
+        <h2 class="panel__title">Verification Stages</h2>
+        <ul class="stage-list">
+          <li>Looking for face...</li>
+          <li>Face detected</li>
+          <li>Liveness check...</li>
+          <li>Comparing...</li>
+          <li>Verified / Not Verified</li>
+        </ul>
+
+        <div class="status-strip status-strip--card">
+          <span class="status-dot status-dot--pulse"></span>
+          <div>
+            <p id="status-text" class="status-strip__status">Waiting to start...</p>
+            <p id="progress-text" class="status-strip__progress"></p>
+          </div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <!-- Result modal -->
+  <div id="result-modal" class="modal" hidden>
+    <div class="modal__card">
+      <div id="modal-icon" class="modal__icon">✔</div>
+      <h2 id="modal-title" class="modal__title">Identity Verified</h2>
+      <p id="modal-subtitle" class="modal__subtitle">Access Granted</p>
+      <p id="modal-score" class="modal__score"></p>
+      <div class="modal__actions">
+        <button id="modal-retry-btn" class="btn btn--ghost">Try Again</button>
+        <button id="modal-close-btn" class="btn btn--primary">Continue to Dashboard</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/verify.js') }}"></script>
+</body>
+</html>
