@@ -16,9 +16,13 @@ from typing import Optional, Type
 import cv2
 import numpy as np
 
-from backend.facial_recognition.config import CAMERA_HEIGHT, CAMERA_INDEX, CAMERA_WIDTH
-from backend.facial_recognition.modules.exceptions import CameraUnavailableError
-from backend.facial_recognition.modules.face_detector import DetectedFace
+from src.backend.facial_recognition.config import (
+    CAMERA_HEIGHT,
+    CAMERA_INDEX,
+    CAMERA_WIDTH,
+)
+from src.backend.facial_recognition.modules.exceptions import CameraUnavailableError
+from src.backend.facial_recognition.modules.face_detector import DetectedFace
 
 
 class CameraModule:

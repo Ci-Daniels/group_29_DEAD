@@ -24,23 +24,26 @@ from typing import List, Optional
 
 import numpy as np
 
-from backend.facial_recognition.config import (
+from src.backend.facial_recognition.config import (
     EMBEDDINGS_DIR,
     RESULT_SCREEN_DURATION_SECONDS,
     VERIFICATION_INFERENCE_INTERVAL,
     VERIFICATION_SEARCH_TIMEOUT_FRAMES,
     VERIFICATION_THRESHOLD,
 )
-from backend.facial_recognition.modules.camera import CameraModule
-from backend.facial_recognition.modules.camera_stream import BufferedCameraStream
-from backend.facial_recognition.modules.exceptions import (
+from src.backend.facial_recognition.modules.camera import CameraModule
+from src.backend.facial_recognition.modules.camera_stream import BufferedCameraStream
+from src.backend.facial_recognition.modules.exceptions import (
     BeneficiaryNotEnrolledError,
     MultipleFacesDetectedError,
     NoFaceDetectedError,
 )
-from backend.facial_recognition.modules.face_detector import DetectedFace, FaceDetector
-from backend.facial_recognition.modules.liveness import LivenessCheck
-from backend.facial_recognition.modules.preview import PreviewRenderer
+from src.backend.facial_recognition.modules.face_detector import (
+    DetectedFace,
+    FaceDetector,
+)
+from src.backend.facial_recognition.modules.liveness import LivenessCheck
+from src.backend.facial_recognition.modules.preview import PreviewRenderer
 
 _MODE_LABEL = "Facial Biometric Verification"
 _COLOR_SUCCESS = (0, 200, 0)

@@ -22,13 +22,13 @@ from typing import List, Optional
 import numpy as np
 from insightface.app import FaceAnalysis
 
-from backend.facial_recognition.config import (
+from src.backend.facial_recognition.config import (
     CTX_ID,
     DETECTION_SIZE,
     INSIGHTFACE_MODEL_PACK,
     MIN_DETECTION_CONFIDENCE,
 )
-from backend.facial_recognition.modules.exceptions import (
+from src.backend.facial_recognition.modules.exceptions import (
     MultipleFacesDetectedError,
     NoFaceDetectedError,
 )

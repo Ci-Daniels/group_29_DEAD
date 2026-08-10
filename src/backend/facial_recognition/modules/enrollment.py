@@ -28,20 +28,23 @@ from typing import Optional
 
 import numpy as np
 
-from backend.facial_recognition.config import (
+from src.backend.facial_recognition.config import (
     EMBEDDINGS_DIR,
     ENROLLMENT_FRAME_INTERVAL,
     ENROLLMENT_SAMPLE_COUNT,
     RESULT_SCREEN_DURATION_SECONDS,
 )
-from backend.facial_recognition.modules.camera import CameraModule
-from backend.facial_recognition.modules.exceptions import (
+from src.backend.facial_recognition.modules.camera import CameraModule
+from src.backend.facial_recognition.modules.exceptions import (
     MultipleFacesDetectedError,
     NoFaceDetectedError,
 )
-from backend.facial_recognition.modules.face_detector import DetectedFace, FaceDetector
-from backend.facial_recognition.modules.liveness import LivenessCheck
-from backend.facial_recognition.modules.preview import PreviewRenderer
+from src.backend.facial_recognition.modules.face_detector import (
+    DetectedFace,
+    FaceDetector,
+)
+from src.backend.facial_recognition.modules.liveness import LivenessCheck
+from src.backend.facial_recognition.modules.preview import PreviewRenderer
 
 _MODE_LABEL = "Facial Biometric Enrollment"
 _COLOR_SUCCESS = (0, 200, 0)

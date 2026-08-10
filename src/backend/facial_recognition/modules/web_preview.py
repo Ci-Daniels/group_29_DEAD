@@ -45,8 +45,8 @@ from typing import Optional
 import cv2
 import numpy as np
 
-from backend.facial_recognition.config import PREVIEW_REFRESH_INTERVAL_SECONDS
-from backend.facial_recognition.modules.preview import PreviewRenderer
+from src.backend.facial_recognition.config import PREVIEW_REFRESH_INTERVAL_SECONDS
+from src.backend.facial_recognition.modules.preview import PreviewRenderer
 
 
 class WebPreviewRenderer(PreviewRenderer):

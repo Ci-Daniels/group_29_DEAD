@@ -25,18 +25,21 @@ from typing import Optional
 
 import numpy as np
 
-from backend.facial_recognition.config import (
+from src.backend.facial_recognition.config import (
     BLINK_EAR_THRESHOLD,
     HEAD_TURN_DISPLACEMENT_RATIO,
     LIVENESS_TIMEOUT_FRAMES,
 )
-from backend.facial_recognition.modules.camera import CameraModule
-from backend.facial_recognition.modules.exceptions import (
+from src.backend.facial_recognition.modules.camera import CameraModule
+from src.backend.facial_recognition.modules.exceptions import (
     LivenessCheckFailedError,
     NoFaceDetectedError,
 )
-from backend.facial_recognition.modules.face_detector import DetectedFace, FaceDetector
-from backend.facial_recognition.modules.preview import PreviewRenderer
+from src.backend.facial_recognition.modules.face_detector import (
+    DetectedFace,
+    FaceDetector,
+)
+from src.backend.facial_recognition.modules.preview import PreviewRenderer
 
 # 106-point landmark indices around each eye (InsightFace 2d_106 layout).
 # Used only for blink detection when landmarks are available.
