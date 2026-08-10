@@ -28,17 +28,20 @@ from typing import Optional
 
 import numpy as np
 
-from config import (
+from backend.facial_recognition.config import (
     EMBEDDINGS_DIR,
     ENROLLMENT_FRAME_INTERVAL,
     ENROLLMENT_SAMPLE_COUNT,
     RESULT_SCREEN_DURATION_SECONDS,
 )
-from modules.camera import CameraModule
-from modules.exceptions import MultipleFacesDetectedError, NoFaceDetectedError
-from modules.face_detector import DetectedFace, FaceDetector
-from modules.liveness import LivenessCheck
-from modules.preview import PreviewRenderer
+from backend.facial_recognition.modules.camera import CameraModule
+from backend.facial_recognition.modules.exceptions import (
+    MultipleFacesDetectedError,
+    NoFaceDetectedError,
+)
+from backend.facial_recognition.modules.face_detector import DetectedFace, FaceDetector
+from backend.facial_recognition.modules.liveness import LivenessCheck
+from backend.facial_recognition.modules.preview import PreviewRenderer
 
 _MODE_LABEL = "Facial Biometric Enrollment"
 _COLOR_SUCCESS = (0, 200, 0)
@@ -83,8 +86,10 @@ class FaceEnrollment:
 
         preview = PreviewRenderer(window_name=f"{_MODE_LABEL} - {beneficiary_id}")
         samples_collected = 0'''
-    
-    def enroll(self, beneficiary_id: str, preview: Optional[PreviewRenderer] = None) -> Path:
+
+    def enroll(
+        self, beneficiary_id: str, preview: Optional[PreviewRenderer] = None
+    ) -> Path:
         """
         Run the full enrollment flow for a beneficiary, with a live preview.
 
@@ -101,10 +106,14 @@ class FaceEnrollment:
         beneficiary_dir.mkdir(parents=True, exist_ok=True)
 
         print(f"\n=== Starting enrollment for Beneficiary ID: {beneficiary_id} ===")
-        print(f"Target samples: {self.sample_count}. Please move your head slightly "
-              f"and vary your expression between captures.\n")
+        print(
+            f"Target samples: {self.sample_count}. Please move your head slightly "
+            f"and vary your expression between captures.\n"
+        )
 
-        preview = preview or PreviewRenderer(window_name=f"{_MODE_LABEL} - {beneficiary_id}")
+        preview = preview or PreviewRenderer(
+            window_name=f"{_MODE_LABEL} - {beneficiary_id}"
+        )
         samples_collected = 0
 
         try:
@@ -112,8 +121,11 @@ class FaceEnrollment:
                 # Liveness gate before we start collecting biometric data.
                 # The same preview window stays open and gives live feedback.
                 self.liveness_check.run(
-                    camera, self.detector, preview=preview,
-                    mode_label=_MODE_LABEL, beneficiary_id=beneficiary_id,
+                    camera,
+                    self.detector,
+                    preview=preview,
+                    mode_label=_MODE_LABEL,
+                    beneficiary_id=beneficiary_id,
                 )
 
                 frame_counter = 0
@@ -128,13 +140,17 @@ class FaceEnrollment:
                     frame_counter += 1
                     progress_text = f"Sample {samples_collected} / {self.sample_count}"
 
-                    run_inference = (frame_counter % self.frame_interval == 0)
+                    run_inference = frame_counter % self.frame_interval == 0
 
                     if not run_inference:
                         # Reuse the previous detection for a smooth, low-
                         # latency preview without re-running SCRFD/ArcFace.
                         annotated = preview.render(
-                            frame, _MODE_LABEL, beneficiary_id, status, progress_text,
+                            frame,
+                            _MODE_LABEL,
+                            beneficiary_id,
+                            status,
+                            progress_text,
                             bbox=last_face.bbox if last_face else None,
                             kps=last_face.kps if last_face else None,
                             landmark_106=last_face.landmark_106 if last_face else None,
@@ -149,38 +165,76 @@ class FaceEnrollment:
                     except NoFaceDetectedError:
                         last_face = None
                         status = "Looking for face..."
-                        preview.show(preview.render(frame, _MODE_LABEL, beneficiary_id, status, progress_text))
+                        preview.show(
+                            preview.render(
+                                frame,
+                                _MODE_LABEL,
+                                beneficiary_id,
+                                status,
+                                progress_text,
+                            )
+                        )
                         print("  [!] No face detected — please face the camera.")
                         continue
                     except MultipleFacesDetectedError:
                         last_face = None
                         status = "Multiple faces detected"
-                        preview.show(preview.render(frame, _MODE_LABEL, beneficiary_id, status, progress_text))
-                        print("  [!] Multiple faces detected — only one person should be in frame.")
+                        preview.show(
+                            preview.render(
+                                frame,
+                                _MODE_LABEL,
+                                beneficiary_id,
+                                status,
+                                progress_text,
+                            )
+                        )
+                        print(
+                            "  [!] Multiple faces detected — only one person should be in frame."
+                        )
                         continue
 
                     last_face = face
                     status = "Capturing embedding..."
-                    preview.show(preview.render(
-                        frame, _MODE_LABEL, beneficiary_id, status, progress_text,
-                        bbox=face.bbox, kps=face.kps, landmark_106=face.landmark_106,
-                        det_score=face.det_score,
-                    ))
+                    preview.show(
+                        preview.render(
+                            frame,
+                            _MODE_LABEL,
+                            beneficiary_id,
+                            status,
+                            progress_text,
+                            bbox=face.bbox,
+                            kps=face.kps,
+                            landmark_106=face.landmark_106,
+                            det_score=face.det_score,
+                        )
+                    )
 
-                    sample_path = beneficiary_dir / f"sample_{samples_collected:02d}.npy"
+                    sample_path = (
+                        beneficiary_dir / f"sample_{samples_collected:02d}.npy"
+                    )
                     np.save(sample_path, face.embedding)
 
                     samples_collected += 1
                     status = "Embedding stored"
                     progress_text = f"Sample {samples_collected} / {self.sample_count}"
-                    preview.show(preview.render(
-                        frame, _MODE_LABEL, beneficiary_id, status, progress_text,
-                        bbox=face.bbox, kps=face.kps, landmark_106=face.landmark_106,
-                        det_score=face.det_score,
-                    ))
+                    preview.show(
+                        preview.render(
+                            frame,
+                            _MODE_LABEL,
+                            beneficiary_id,
+                            status,
+                            progress_text,
+                            bbox=face.bbox,
+                            kps=face.kps,
+                            landmark_106=face.landmark_106,
+                            det_score=face.det_score,
+                        )
+                    )
 
-                    print(f"  [Enrollment] Captured sample {samples_collected}/{self.sample_count} "
-                          f"(det_score={face.det_score:.2f}) -> {sample_path.name}")
+                    print(
+                        f"  [Enrollment] Captured sample {samples_collected}/{self.sample_count} "
+                        f"(det_score={face.det_score:.2f}) -> {sample_path.name}"
+                    )
 
                     # Small delay so consecutive frames aren't visually identical.
                     time.sleep(0.15)
@@ -197,6 +251,8 @@ class FaceEnrollment:
         finally:
             preview.close()
 
-        print(f"\n=== Enrollment complete for '{beneficiary_id}'. "
-              f"{samples_collected} embeddings saved to: {beneficiary_dir} ===\n")
+        print(
+            f"\n=== Enrollment complete for '{beneficiary_id}'. "
+            f"{samples_collected} embeddings saved to: {beneficiary_dir} ===\n"
+        )
         return beneficiary_dir

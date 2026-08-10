@@ -25,15 +25,18 @@ from typing import Optional
 
 import numpy as np
 
-from config import (
+from backend.facial_recognition.config import (
     BLINK_EAR_THRESHOLD,
     HEAD_TURN_DISPLACEMENT_RATIO,
     LIVENESS_TIMEOUT_FRAMES,
 )
-from modules.camera import CameraModule
-from modules.exceptions import LivenessCheckFailedError, NoFaceDetectedError
-from modules.face_detector import DetectedFace, FaceDetector
-from modules.preview import PreviewRenderer
+from backend.facial_recognition.modules.camera import CameraModule
+from backend.facial_recognition.modules.exceptions import (
+    LivenessCheckFailedError,
+    NoFaceDetectedError,
+)
+from backend.facial_recognition.modules.face_detector import DetectedFace, FaceDetector
+from backend.facial_recognition.modules.preview import PreviewRenderer
 
 # 106-point landmark indices around each eye (InsightFace 2d_106 layout).
 # Used only for blink detection when landmarks are available.
@@ -104,15 +107,19 @@ class LivenessCheck:
             except NoFaceDetectedError:
                 # Face temporarily out of frame — just keep waiting.
                 if preview is not None:
-                    preview.show(preview.render(
-                        frame, mode_label, beneficiary_id, "Looking for face..."
-                    ))
+                    preview.show(
+                        preview.render(
+                            frame, mode_label, beneficiary_id, "Looking for face..."
+                        )
+                    )
                 continue
             except Exception:
                 if preview is not None:
-                    preview.show(preview.render(
-                        frame, mode_label, beneficiary_id, "Multiple faces detected"
-                    ))
+                    preview.show(
+                        preview.render(
+                            frame, mode_label, beneficiary_id, "Multiple faces detected"
+                        )
+                    )
                 continue
 
             # --- Head-turn detection (unchanged logic) ---------------------
@@ -127,13 +134,22 @@ class LivenessCheck:
             normalized_displacement = displacement / max(baseline_face_width, 1e-6)
 
             if normalized_displacement >= self.head_turn_ratio:
-                print(f"[Liveness] Head turn detected (frame {frame_count}). Liveness CONFIRMED.")
+                print(
+                    f"[Liveness] Head turn detected (frame {frame_count}). Liveness CONFIRMED."
+                )
                 if preview is not None:
-                    preview.show(preview.render(
-                        frame, mode_label, beneficiary_id, "Liveness confirmed",
-                        bbox=face.bbox, kps=face.kps, landmark_106=face.landmark_106,
-                        det_score=face.det_score,
-                    ))
+                    preview.show(
+                        preview.render(
+                            frame,
+                            mode_label,
+                            beneficiary_id,
+                            "Liveness confirmed",
+                            bbox=face.bbox,
+                            kps=face.kps,
+                            landmark_106=face.landmark_106,
+                            det_score=face.det_score,
+                        )
+                    )
                 return True
 
             # --- Blink detection (only if 106-pt landmarks available, unchanged logic) ---
@@ -141,22 +157,38 @@ class LivenessCheck:
                 ear = self._compute_average_ear(face)
                 ear_history.append(ear)
                 if len(ear_history) > 5 and self._blink_detected(ear_history):
-                    print(f"[Liveness] Blink detected (frame {frame_count}). Liveness CONFIRMED.")
+                    print(
+                        f"[Liveness] Blink detected (frame {frame_count}). Liveness CONFIRMED."
+                    )
                     if preview is not None:
-                        preview.show(preview.render(
-                            frame, mode_label, beneficiary_id, "Liveness confirmed",
-                            bbox=face.bbox, kps=face.kps, landmark_106=face.landmark_106,
-                            det_score=face.det_score,
-                        ))
+                        preview.show(
+                            preview.render(
+                                frame,
+                                mode_label,
+                                beneficiary_id,
+                                "Liveness confirmed",
+                                bbox=face.bbox,
+                                kps=face.kps,
+                                landmark_106=face.landmark_106,
+                                det_score=face.det_score,
+                            )
+                        )
                     return True
 
             # Neither gesture detected yet this frame — show live feedback.
             if preview is not None:
-                preview.show(preview.render(
-                    frame, mode_label, beneficiary_id, status,
-                    bbox=face.bbox, kps=face.kps, landmark_106=face.landmark_106,
-                    det_score=face.det_score,
-                ))
+                preview.show(
+                    preview.render(
+                        frame,
+                        mode_label,
+                        beneficiary_id,
+                        status,
+                        bbox=face.bbox,
+                        kps=face.kps,
+                        landmark_106=face.landmark_106,
+                        det_score=face.det_score,
+                    )
+                )
 
         raise LivenessCheckFailedError(
             "Liveness check timed out. No blink or head turn detected. "
@@ -192,4 +224,7 @@ class LivenessCheck:
         pattern.
         """
         recent = ear_history[-5:]
-        return min(recent) < self.blink_ear_threshold and recent[-1] > self.blink_ear_threshold
+        return (
+            min(recent) < self.blink_ear_threshold
+            and recent[-1] > self.blink_ear_threshold
+        )

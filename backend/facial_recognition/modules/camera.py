@@ -16,9 +16,9 @@ from typing import Optional, Type
 import cv2
 import numpy as np
 
-from config import CAMERA_HEIGHT, CAMERA_INDEX, CAMERA_WIDTH
-from modules.exceptions import CameraUnavailableError
-from modules.face_detector import DetectedFace
+from backend.facial_recognition.config import CAMERA_HEIGHT, CAMERA_INDEX, CAMERA_WIDTH
+from backend.facial_recognition.modules.exceptions import CameraUnavailableError
+from backend.facial_recognition.modules.face_detector import DetectedFace
 
 
 class CameraModule:
@@ -55,7 +55,9 @@ class CameraModule:
 
         self._capture.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
         self._capture.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-        print(f"[Camera] Opened device {self.camera_index} at {self.width}x{self.height}.")
+        print(
+            f"[Camera] Opened device {self.camera_index} at {self.width}x{self.height}."
+        )
 
     def read_frame(self) -> np.ndarray:
         """

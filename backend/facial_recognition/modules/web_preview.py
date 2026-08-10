@@ -45,8 +45,8 @@ from typing import Optional
 import cv2
 import numpy as np
 
-from config import PREVIEW_REFRESH_INTERVAL_SECONDS
-from modules.preview import PreviewRenderer
+from backend.facial_recognition.config import PREVIEW_REFRESH_INTERVAL_SECONDS
+from backend.facial_recognition.modules.preview import PreviewRenderer
 
 
 class WebPreviewRenderer(PreviewRenderer):
@@ -162,7 +162,9 @@ class WebPreviewRenderer(PreviewRenderer):
                 "landmark_106": kwargs.get("landmark_106"),
                 "det_score": kwargs.get("det_score"),
             }
-        return super().render(frame, mode_label, beneficiary_id, status, progress, **kwargs)
+        return super().render(
+            frame, mode_label, beneficiary_id, status, progress, **kwargs
+        )
 
     def show(self, frame: np.ndarray, wait_ms: int = 1) -> int:
         """

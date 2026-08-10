@@ -36,8 +36,8 @@ from typing import Optional, Type
 
 import numpy as np
 
-from modules.camera import CameraModule
-from modules.exceptions import CameraUnavailableError
+from backend.facial_recognition.modules.camera import CameraModule
+from backend.facial_recognition.modules.exceptions import CameraUnavailableError
 
 # Max time to wait for the first frame to arrive after opening the device.
 _FIRST_FRAME_TIMEOUT_SECONDS = 5.0

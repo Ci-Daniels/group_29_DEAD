@@ -24,23 +24,23 @@ from typing import List, Optional
 
 import numpy as np
 
-from config import (
+from backend.facial_recognition.config import (
     EMBEDDINGS_DIR,
     RESULT_SCREEN_DURATION_SECONDS,
     VERIFICATION_INFERENCE_INTERVAL,
     VERIFICATION_SEARCH_TIMEOUT_FRAMES,
     VERIFICATION_THRESHOLD,
 )
-from modules.camera import CameraModule
-from modules.camera_stream import BufferedCameraStream
-from modules.exceptions import (
+from backend.facial_recognition.modules.camera import CameraModule
+from backend.facial_recognition.modules.camera_stream import BufferedCameraStream
+from backend.facial_recognition.modules.exceptions import (
     BeneficiaryNotEnrolledError,
     MultipleFacesDetectedError,
     NoFaceDetectedError,
 )
-from modules.face_detector import DetectedFace, FaceDetector
-from modules.liveness import LivenessCheck
-from modules.preview import PreviewRenderer
+from backend.facial_recognition.modules.face_detector import DetectedFace, FaceDetector
+from backend.facial_recognition.modules.liveness import LivenessCheck
+from backend.facial_recognition.modules.preview import PreviewRenderer
 
 _MODE_LABEL = "Facial Biometric Verification"
 _COLOR_SUCCESS = (0, 200, 0)
@@ -106,8 +106,9 @@ class FaceVerification:
 
         preview = PreviewRenderer(window_name=f"{_MODE_LABEL} - {beneficiary_id}")'''
 
-
-    def verify(self, beneficiary_id: str, preview: Optional[PreviewRenderer] = None) -> VerificationResult:
+    def verify(
+        self, beneficiary_id: str, preview: Optional[PreviewRenderer] = None
+    ) -> VerificationResult:
         """
         Run the full verification flow for a beneficiary, with a live preview.
 
@@ -128,7 +129,9 @@ class FaceVerification:
 
         print(f"\n=== Starting verification for Beneficiary ID: {beneficiary_id} ===")
 
-        preview = preview or PreviewRenderer(window_name=f"{_MODE_LABEL} - {beneficiary_id}")
+        preview = preview or PreviewRenderer(
+            window_name=f"{_MODE_LABEL} - {beneficiary_id}"
+        )
         live_embedding: Optional[np.ndarray] = None
         similarity_score: float = 0.0
         verified: bool = False
@@ -139,8 +142,11 @@ class FaceVerification:
                     preview.attach_camera_stream(camera)
                 # Liveness gate before accepting a live sample for matching.
                 self.liveness_check.run(
-                    camera, self.detector, preview=preview,
-                    mode_label=_MODE_LABEL, beneficiary_id=beneficiary_id,
+                    camera,
+                    self.detector,
+                    preview=preview,
+                    mode_label=_MODE_LABEL,
+                    beneficiary_id=beneficiary_id,
                 )
 
                 last_face: Optional[DetectedFace] = None
@@ -155,11 +161,14 @@ class FaceVerification:
                 for _ in range(self.search_timeout_frames):
                     frame = camera.read_frame()
                     frame_counter += 1
-                    run_inference = (frame_counter % self.inference_interval == 0)
+                    run_inference = frame_counter % self.inference_interval == 0
 
                     if not run_inference:
                         annotated = preview.render(
-                            frame, _MODE_LABEL, beneficiary_id, status,
+                            frame,
+                            _MODE_LABEL,
+                            beneficiary_id,
+                            status,
                             bbox=last_face.bbox if last_face else None,
                             kps=last_face.kps if last_face else None,
                             landmark_106=last_face.landmark_106 if last_face else None,
@@ -173,21 +182,32 @@ class FaceVerification:
                     except NoFaceDetectedError:
                         last_face = None
                         status = "Looking for face..."
-                        preview.show(preview.render(frame, _MODE_LABEL, beneficiary_id, status))
+                        preview.show(
+                            preview.render(frame, _MODE_LABEL, beneficiary_id, status)
+                        )
                         continue
                     except MultipleFacesDetectedError:
                         last_face = None
                         status = "Multiple faces detected"
-                        preview.show(preview.render(frame, _MODE_LABEL, beneficiary_id, status))
+                        preview.show(
+                            preview.render(frame, _MODE_LABEL, beneficiary_id, status)
+                        )
                         continue
 
                     last_face = face
                     status = "Capturing embedding..."
-                    preview.show(preview.render(
-                        frame, _MODE_LABEL, beneficiary_id, status,
-                        bbox=face.bbox, kps=face.kps, landmark_106=face.landmark_106,
-                        det_score=face.det_score,
-                    ))
+                    preview.show(
+                        preview.render(
+                            frame,
+                            _MODE_LABEL,
+                            beneficiary_id,
+                            status,
+                            bbox=face.bbox,
+                            kps=face.kps,
+                            landmark_106=face.landmark_106,
+                            det_score=face.det_score,
+                        )
+                    )
 
                     live_embedding = face.embedding
                     break
@@ -198,17 +218,26 @@ class FaceVerification:
                     )
 
                 # --- Matching logic: UNCHANGED cosine-similarity comparison ---
-                similarity_score = self._best_cosine_similarity(live_embedding, enrolled_embeddings)
+                similarity_score = self._best_cosine_similarity(
+                    live_embedding, enrolled_embeddings
+                )
                 verified = similarity_score >= self.threshold
 
-                status = "Verification successful" if verified else "Verification failed"
+                status = (
+                    "Verification successful" if verified else "Verification failed"
+                )
                 status_frame = camera.read_frame()
-                preview.show(preview.render(
-                    status_frame, _MODE_LABEL, beneficiary_id, status,
-                    progress=f"Similarity: {similarity_score:.4f}",
-                    bbox=last_face.bbox if last_face else None,
-                    kps=last_face.kps if last_face else None,
-                ))
+                preview.show(
+                    preview.render(
+                        status_frame,
+                        _MODE_LABEL,
+                        beneficiary_id,
+                        status,
+                        progress=f"Similarity: {similarity_score:.4f}",
+                        bbox=last_face.bbox if last_face else None,
+                        kps=last_face.kps if last_face else None,
+                    )
+                )
 
                 # --- Final result screen, shown before the camera/preview close ---
                 headline = "VERIFIED" if verified else "NOT VERIFIED"
@@ -272,5 +301,7 @@ class FaceVerification:
         enrolled samples — the live face only needs to closely match
         ONE of the enrolled poses/expressions.
         """
-        scores = [self._cosine_similarity(live_embedding, ref) for ref in enrolled_embeddings]
+        scores = [
+            self._cosine_similarity(live_embedding, ref) for ref in enrolled_embeddings
+        ]
         return max(scores)

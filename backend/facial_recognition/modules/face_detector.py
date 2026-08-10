@@ -22,18 +22,28 @@ from typing import List, Optional
 import numpy as np
 from insightface.app import FaceAnalysis
 
-from config import CTX_ID, DETECTION_SIZE, INSIGHTFACE_MODEL_PACK, MIN_DETECTION_CONFIDENCE
-from modules.exceptions import MultipleFacesDetectedError, NoFaceDetectedError
+from backend.facial_recognition.config import (
+    CTX_ID,
+    DETECTION_SIZE,
+    INSIGHTFACE_MODEL_PACK,
+    MIN_DETECTION_CONFIDENCE,
+)
+from backend.facial_recognition.modules.exceptions import (
+    MultipleFacesDetectedError,
+    NoFaceDetectedError,
+)
 
 
 @dataclass
 class DetectedFace:
     """Lightweight container for the data we care about from an InsightFace result."""
 
-    bbox: np.ndarray            # [x1, y1, x2, y2]
-    det_score: float            # SCRFD detection confidence
-    kps: np.ndarray             # 5-point keypoints (eyes, nose, mouth corners)
-    embedding: np.ndarray       # 512-d ArcFace embedding (unnormalized, as given by InsightFace)
+    bbox: np.ndarray  # [x1, y1, x2, y2]
+    det_score: float  # SCRFD detection confidence
+    kps: np.ndarray  # 5-point keypoints (eyes, nose, mouth corners)
+    embedding: (
+        np.ndarray
+    )  # 512-d ArcFace embedding (unnormalized, as given by InsightFace)
     landmark_106: Optional[np.ndarray]  # 106-point landmarks, if available
 
 
@@ -53,11 +63,15 @@ class FaceDetector:
         ctx_id: int = CTX_ID,
         detection_size: tuple[int, int] = DETECTION_SIZE,
     ) -> None:
-        print(f"[FaceDetector] Loading InsightFace model pack '{model_pack}' "
-              f"(this downloads weights on first run)...")
+        print(
+            f"[FaceDetector] Loading InsightFace model pack '{model_pack}' "
+            f"(this downloads weights on first run)..."
+        )
         self._app = FaceAnalysis(name=model_pack)
         self._app.prepare(ctx_id=ctx_id, det_size=detection_size)
-        print("[FaceDetector] Model ready (SCRFD detector + ArcFace recognizer loaded).")
+        print(
+            "[FaceDetector] Model ready (SCRFD detector + ArcFace recognizer loaded)."
+        )
 
     def detect(self, frame: np.ndarray) -> List[DetectedFace]:
         """

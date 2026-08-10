@@ -18,17 +18,17 @@ from __future__ import annotations
 
 import sys
 
-from modules.enrollment import FaceEnrollment
-from modules.exceptions import (
+from backend.facial_recognition.modules.enrollment import FaceEnrollment
+from backend.facial_recognition.modules.exceptions import (
     BeneficiaryNotEnrolledError,
     CameraUnavailableError,
     LivenessCheckFailedError,
     MultipleFacesDetectedError,
     NoFaceDetectedError,
 )
-from modules.face_detector import FaceDetector
-from modules.liveness import LivenessCheck
-from modules.verification import FaceVerification
+from backend.facial_recognition.modules.face_detector import FaceDetector
+from backend.facial_recognition.modules.liveness import LivenessCheck
+from backend.facial_recognition.modules.verification import FaceVerification
 
 
 def print_usage() -> None:
