@@ -40,7 +40,11 @@ from src.backend.facial_recognition.modules.liveness import LivenessCheck
 from src.backend.facial_recognition.modules.verification import FaceVerification
 from src.backend.facial_recognition.modules.web_preview import WebPreviewRenderer
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    template_folder="src/frontend/templates",
+    static_folder="src/frontend/static/",
+)
 
 # --------------------------------------------------------------------------
 # Shared AI components
@@ -98,7 +102,7 @@ _EXPECTED_ERRORS = (
 
 
 def _run_enrollment(session_id: str, metadata: dict) -> None:
-    """Runs FaceEnrollment.enroll() on a background thread."""
+    """Run FaceEnrollment.enroll() on a background thread."""
     session = _get_session(session_id)
     beneficiary_id = session["beneficiary_id"]
 
@@ -121,7 +125,7 @@ def _run_enrollment(session_id: str, metadata: dict) -> None:
 
 
 def _run_verification(session_id: str) -> None:
-    """Runs FaceVerification.verify() on a background thread."""
+    """Run FaceVerification.verify() on a background thread."""
     session = _get_session(session_id)
     beneficiary_id = session["beneficiary_id"]
 
