@@ -1,5 +1,4 @@
-"""
-app.py
+"""app.py.
 ------
 Flask web layer for the facial biometric prototype.
 
@@ -24,23 +23,22 @@ import json
 import threading
 import time
 import uuid
-from typing import Dict, Optional
+from typing import Dict, Optional  # noqa: UP035
 
 from flask import Flask, Response, jsonify, render_template, request
-
-from config import EMBEDDINGS_DIR
-from modules.enrollment import FaceEnrollment
-from modules.exceptions import (
+from src.backend.facial_recognition.config import EMBEDDINGS_DIR
+from src.backend.facial_recognition.modules.enrollment import FaceEnrollment
+from src.backend.facial_recognition.modules.exceptions import (
     BeneficiaryNotEnrolledError,
     CameraUnavailableError,
     LivenessCheckFailedError,
     MultipleFacesDetectedError,
     NoFaceDetectedError,
 )
-from modules.face_detector import FaceDetector
-from modules.liveness import LivenessCheck
-from modules.verification import FaceVerification
-from modules.web_preview import WebPreviewRenderer
+from src.backend.facial_recognition.modules.face_detector import FaceDetector
+from src.backend.facial_recognition.modules.liveness import LivenessCheck
+from src.backend.facial_recognition.modules.verification import FaceVerification
+from src.backend.facial_recognition.modules.web_preview import WebPreviewRenderer
 
 app = Flask(__name__)
 
@@ -174,7 +172,11 @@ def api_register_start():
         return jsonify({"error": "Beneficiary ID is required."}), 400
 
     if not data.get("consent_given"):
-        return jsonify({"error": "Biometric data consent is required before enrollment can proceed."}), 400
+        return jsonify(
+            {
+                "error": "Biometric data consent is required before enrollment can proceed."
+            }
+        ), 400
 
     metadata = {
         "beneficiary_id": beneficiary_id,
@@ -187,7 +189,9 @@ def api_register_start():
     }
 
     session_id = _new_session("register", beneficiary_id)
-    thread = threading.Thread(target=_run_enrollment, args=(session_id, metadata), daemon=True)
+    thread = threading.Thread(
+        target=_run_enrollment, args=(session_id, metadata), daemon=True
+    )
     thread.start()
 
     return jsonify({"session_id": session_id})
