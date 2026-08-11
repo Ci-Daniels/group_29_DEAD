@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}DEAD System{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/favicon.svg') }}" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/token.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  {% set logged_in = logged_in | default(false) %}
+
+  <nav class="navbar">
+    <a href="{{ url_for('index') }}" class="navbar__brand">
+      <span class="navbar__logo">◈</span>
+      <span>DEAD System</span>
+    </a>
+    <div class="navbar__links">
+      {% if logged_in %}
+        {% block nav_links %}
+          <a href="{{ url_for('dashboard') }}" class="navbar__link">Dashboard</a>
+          <a href="{{ url_for('assets_page') }}" class="navbar__link">Assets</a>
+          <a href="{{ url_for('beneficiaries_page') }}" class="navbar__link">Beneficiaries</a>
+          <a href="{{ url_for('notifications_page') }}" class="navbar__link">Notifications</a>
+          <a href="{{ url_for('profile_page') }}" class="navbar__link">Profile</a>
+          <a href="{{ url_for('logout') }}" class="navbar__link navbar__link--logout">Logout</a>
+        {% endblock %}
+      {% else %}
+        {% block nav_links_public %}
+          <a href="{{ url_for('index') }}" class="navbar__link">Home</a>
+          <a href="{{ url_for('login_page') }}" class="navbar__link">Login</a>
+          <a href="{{ url_for('signup_page') }}" class="navbar__link navbar__link--primary">Sign Up</a>
+        {% endblock %}
+      {% endif %}
+    </div>
+  </nav>
+
+  {% block content %}{% endblock %}
+
+  <footer class="footer">
+    <div class="footer__inner">
+      <div class="footer__brand">
+        <span class="footer__logo">◈</span>
+        <span>Deceased Electronic Assets Discovery</span>
+      </div>
+      <div class="footer__links">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Contact</a>
+      </div>
+      <p class="footer__copy">&copy; 2025 DEAD System. All rights reserved.</p>
+    </div>
+  </footer>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

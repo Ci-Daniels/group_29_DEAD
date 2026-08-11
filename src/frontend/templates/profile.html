@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% set logged_in = true %}
+
+{% block title %}DEAD System &middot; Profile{% endblock %}
+
+{% block content %}
+<main class="page">
+  <header class="page__header">
+    <h1>Primary Holder Profile</h1>
+    <p class="page__subtitle">Manage your personal information and consent settings.</p>
+  </header>
+
+  <div class="panel" style="margin-bottom: 24px;">
+    <h2 class="panel__title">Personal Information</h2>
+    <form id="profile-form" class="auth-form">
+      <div class="form-row">
+        <label class="field">
+          <span class="field__label">Full Name</span>
+          <input type="text" name="name" value="John Doe" required />
+        </label>
+        <label class="field">
+          <span class="field__label">National ID / Passport</span>
+          <input type="text" name="national_id" value="A12345678" required />
+        </label>
+      </div>
+      <div class="form-row">
+        <label class="field">
+          <span class="field__label">Country of Residence</span>
+          <select name="country" class="field__select">
+            <option value="KE" selected>Kenya</option>
+            <option value="NG">Nigeria</option>
+            <option value="RW">Rwanda</option>
+            <option value="GH">Ghana</option>
+            <option value="ZA">South Africa</option>
+            <option value="UG">Uganda</option>
+            <option value="TZ">Tanzania</option>
+            <option value="ET">Ethiopia</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field__label">Email Address</span>
+          <input type="email" name="email" value="john.doe@example.com" required />
+        </label>
+      </div>
+      <button type="submit" class="btn btn--primary">Update Profile</button>
+    </form>
+    <p id="profile-message" class="auth-success" hidden></p>
+  </div>
+
+  <!-- Consent settings -->
+  <div class="panel">
+    <h2 class="panel__title">Consent &amp; Permissions</h2>
+    <div class="toggle-field">
+      <div>
+        <span class="toggle-field__label">Email Metadata Scanning</span>
+        <p class="toggle-field__desc">Allow AI to scan your email to discover undeclared digital assets.</p>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" name="consent_email_scan" checked />
+        <span class="toggle__slider"></span>
+      </label>
+    </div>
+    <div class="toggle-field">
+      <div>
+        <span class="toggle-field__label">Biometric Data Processing</span>
+        <p class="toggle-field__desc">Consent to store and process facial biometric data of beneficiaries.</p>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" name="consent_biometric" checked />
+        <span class="toggle__slider"></span>
+      </label>
+    </div>
+    <div class="toggle-field">
+      <div>
+        <span class="toggle-field__label">Death Registry Integration</span>
+        <p class="toggle-field__desc">Allow the system to verify death status via national registry.</p>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" name="consent_death_registry" checked />
+        <span class="toggle__slider"></span>
+      </label>
+    </div>
+
+    <p id="consent-message" class="auth-success" hidden style="margin-top:16px;">Consent preferences saved.</p>
+    <button id="save-consent-btn" class="btn btn--primary" style="margin-top:16px;">Save Consent Settings</button>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/profile.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,53 @@
+/* --------------------------------------------------------------------
+   token.css — Design tokens
+   All custom properties (colors, spacing, typography, radii, shadows)
+   live here so they can be swapped out when applying a design template.
+   -------------------------------------------------------------------- */
+
+:root {
+  /* ---- Palette ---- */
+  --color-bg: #f6f7fb;
+  --color-surface: #ffffff;
+  --color-border: #e5e7eb;
+  --color-text: #1f2430;
+  --color-text-muted: #6b7280;
+
+  --color-indigo: #4f46e5;
+  --color-indigo-dark: #4338ca;
+  --color-teal: #0d9488;
+  --color-slate: #64748b;
+
+  --color-success: #16a34a;
+  --color-success-bg: #ecfdf3;
+  --color-error: #dc2626;
+  --color-error-bg: #fef2f2;
+  --color-warning: #d97706;
+  --color-warning-bg: #fffbeb;
+
+  /* ---- Radii ---- */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+
+  /* ---- Shadows ---- */
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 4px 16px rgba(16, 24, 40, 0.06);
+  --shadow-modal: 0 20px 60px rgba(16, 24, 40, 0.25);
+
+  /* ---- Transitions ---- */
+  --transition-fast: 150ms ease;
+  --transition-medium: 250ms ease;
+
+  /* ---- Typography ---- */
+  --font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* ---- Spacing ---- */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  /* ---- Layout ---- */
+  --max-width: 1100px;
+}

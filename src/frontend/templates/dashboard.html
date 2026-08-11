@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% set logged_in = true %}
+
+{% block title %}DEAD System &middot; Dashboard{% endblock %}
+
+{% block content %}
+<main class="page">
+  <header class="page__header">
+    <h1>Dashboard</h1>
+    <p class="page__subtitle">Welcome back, John Doe. Here's your digital estate overview.</p>
+  </header>
+
+  <!-- Stat cards -->
+  <div class="stat-grid">
+    <div class="stat-card">
+      <p class="stat-card__label">Total Assets</p>
+      <p class="stat-card__value stat-card__value--indigo">12</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-card__label">Beneficiaries</p>
+      <p class="stat-card__value stat-card__value--teal">3</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-card__label">Pending Notifications</p>
+      <p class="stat-card__value stat-card__value--warning">2</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-card__label">Consent Status</p>
+      <p class="stat-card__value stat-card__value--success">&check;</p>
+    </div>
+  </div>
+
+  <!-- Primary holder info -->
+  <div class="panel" style="margin-bottom: 24px;">
+    <div class="section-header">
+      <h3 class="section-header__title">Primary Holder</h3>
+      <a href="{{ url_for('profile_page') }}" class="btn btn--ghost btn--sm">Edit Profile</a>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+      <div>
+        <p style="font-size:12px;text-transform:uppercase;letter-spacing:0.04em;color:var(--color-text-muted);margin:0 0 2px;">Name</p>
+        <p style="font-size:14px;font-weight:500;margin:0;">John Doe</p>
+      </div>
+      <div>
+        <p style="font-size:12px;text-transform:uppercase;letter-spacing:0.04em;color:var(--color-text-muted);margin:0 0 2px;">Country</p>
+        <p style="font-size:14px;font-weight:500;margin:0;">Kenya</p>
+      </div>
+      <div>
+        <p style="font-size:12px;text-transform:uppercase;letter-spacing:0.04em;color:var(--color-text-muted);margin:0 0 2px;">National ID</p>
+        <p style="font-size:14px;font-weight:500;margin:0;">A12345678</p>
+      </div>
+      <div>
+        <p style="font-size:12px;text-transform:uppercase;letter-spacing:0.04em;color:var(--color-text-muted);margin:0 0 2px;">Email Scan Consent</p>
+        <span class="badge badge--success">Granted</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent assets -->
+  <div class="panel" style="margin-bottom: 24px;">
+    <div class="section-header">
+      <h3 class="section-header__title">Recent Assets</h3>
+      <a href="{{ url_for('assets_page') }}" class="btn btn--ghost btn--sm">View All</a>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Asset Type</th>
+          <th>Location / Platform</th>
+          <th>Value (USD)</th>
+          <th>Date Added</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Bank Account</td>
+          <td>Equity Bank Kenya</td>
+          <td>$12,500</td>
+          <td>2025-06-15</td>
+        </tr>
+        <tr>
+          <td>Mobile Money</td>
+          <td>M-Pesa</td>
+          <td>$3,200</td>
+          <td>2025-06-14</td>
+        </tr>
+        <tr>
+          <td>Crypto Wallet</td>
+          <td>Binance</td>
+          <td>$8,750</td>
+          <td>2025-06-10</td>
+        </tr>
+        <tr>
+          <td>Social Media</td>
+          <td>YouTube (Influencer)</td>
+          <td>$5,000</td>
+          <td>2025-05-28</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Quick links -->
+  <div class="card-grid">
+    <a href="{{ url_for('beneficiaries_page') }}" class="action-card">
+      <div class="action-card__icon action-card__icon--teal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="8" cy="9" r="3"></circle>
+          <path d="M2 20c0-3.3 2.7-5 6-5s6 1.7 6 5"></path>
+          <circle cx="17" cy="8" r="2.5"></circle>
+          <path d="M15.5 13c2.5 0 5 1.3 5.5 4"></path>
+        </svg>
+      </div>
+      <h3>Next of Kin</h3>
+      <p>Manage beneficiaries, roles, and fail-safe options.</p>
+      <span class="action-card__cta">Manage &rarr;</span>
+    </a>
+
+    <a href="{{ url_for('register_page') }}" class="action-card">
+      <div class="action-card__icon action-card__icon--indigo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="8" r="4"></circle>
+          <path d="M4 20c0-4 4-6 8-6s8 2 8 6"></path>
+          <path d="M19 8h4M21 6v4"></path>
+        </svg>
+      </div>
+      <h3>Enroll Face</h3>
+      <p>Register a beneficiary's facial biometrics.</p>
+      <span class="action-card__cta">Enroll &rarr;</span>
+    </a>
+
+    <a href="{{ url_for('notifications_page') }}" class="action-card">
+      <div class="action-card__icon action-card__icon--warning">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+          <path d="M13.7 21a2 2 0 01-3.4 0"></path>
+        </svg>
+      </div>
+      <h3>Notifications</h3>
+      <p>2 pending alerts require your attention.</p>
+      <span class="action-card__cta">View &rarr;</span>
+    </a>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

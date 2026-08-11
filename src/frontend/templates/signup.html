@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}DEAD System &middot; Sign Up{% endblock %}
+
+{% block content %}
+<main class="page page--centered">
+  <div class="auth-card">
+    <div class="auth-card__header">
+      <span class="auth-card__logo">◈</span>
+      <h1>Create Account</h1>
+      <p class="auth-card__subtitle">Register as a primary asset holder</p>
+    </div>
+
+    <form id="signup-form" class="auth-form">
+      <div class="form-row">
+        <label class="field">
+          <span class="field__label">Full Name</span>
+          <input type="text" name="name" required placeholder="John Doe" />
+        </label>
+        <label class="field">
+          <span class="field__label">National ID / Passport</span>
+          <input type="text" name="national_id" required placeholder="e.g. A12345678" />
+        </label>
+      </div>
+
+      <label class="field">
+        <span class="field__label">Country of Residence</span>
+        <select name="country" required class="field__select">
+          <option value="" disabled selected>Select your country</option>
+          <option value="KE">Kenya</option>
+          <option value="NG">Nigeria</option>
+          <option value="RW">Rwanda</option>
+          <option value="GH">Ghana</option>
+          <option value="ZA">South Africa</option>
+          <option value="UG">Uganda</option>
+          <option value="TZ">Tanzania</option>
+          <option value="ET">Ethiopia</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span class="field__label">Email Address</span>
+        <input type="email" name="email" required placeholder="you@example.com" autocomplete="email" />
+      </label>
+
+      <div class="form-row">
+        <label class="field">
+          <span class="field__label">Password</span>
+          <input type="password" name="password" required placeholder="Min. 8 characters" autocomplete="new-password" minlength="8" />
+        </label>
+        <label class="field">
+          <span class="field__label">Confirm Password</span>
+          <input type="password" name="confirm_password" required placeholder="Re-enter password" autocomplete="new-password" />
+        </label>
+      </div>
+
+      <button type="submit" class="btn btn--primary">Create Account</button>
+    </form>
+
+    <p id="signup-error" class="auth-error" hidden></p>
+    <p id="signup-success" class="auth-success" hidden></p>
+
+    <p class="auth-footer">
+      Already have an account? <a href="{{ url_for('login_page') }}">Sign in</a>
+    </p>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/signup.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% set logged_in = true %}
+
+{% block title %}DEAD System &middot; Notifications{% endblock %}
+
+{% block content %}
+<main class="page">
+  <header class="page__header">
+    <h1>Notification Center</h1>
+    <p class="page__subtitle">Stay updated on beneficiary decisions, death verification, and system alerts.</p>
+  </header>
+
+  <div class="panel">
+    <table class="data-table" id="notification-table">
+      <thead>
+        <tr>
+          <th>Status</th>
+          <th>Message</th>
+          <th>Date Sent</th>
+          <th>Recipient</th>
+        </tr>
+      </thead>
+      <tbody id="notification-tbody">
+        <!-- Populated dynamically -->
+      </tbody>
+    </table>
+    <div id="notification-empty" class="empty-state" hidden>
+      <div class="empty-state__icon">&#128276;</div>
+      <p class="empty-state__text">No notifications yet.</p>
+    </div>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+{% endblock %}

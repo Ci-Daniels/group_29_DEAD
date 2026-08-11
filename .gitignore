@@ -14,3 +14,7 @@ env/
 __pycache__/
 *.py[cod]
 *.so
+
+# Attached files
+Group_29.pdf
+image.png

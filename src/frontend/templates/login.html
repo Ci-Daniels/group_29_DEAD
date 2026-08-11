@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}DEAD System &middot; Login{% endblock %}
+
+{% block content %}
+<main class="page page--centered">
+  <div class="auth-card">
+    <div class="auth-card__header">
+      <span class="auth-card__logo">◈</span>
+      <h1>Welcome Back</h1>
+      <p class="auth-card__subtitle">Sign in to manage your digital estate</p>
+    </div>
+
+    <form id="login-form" class="auth-form">
+      <label class="field">
+        <span class="field__label">Email Address</span>
+        <input type="email" name="email" required placeholder="you@example.com" autocomplete="email" />
+      </label>
+
+      <label class="field">
+        <span class="field__label">Password</span>
+        <input type="password" name="password" required placeholder="Enter your password" autocomplete="current-password" />
+      </label>
+
+      <button type="submit" class="btn btn--primary">Sign In</button>
+    </form>
+
+    <p id="login-error" class="auth-error" hidden></p>
+
+    <p class="auth-footer">
+      Don't have an account? <a href="{{ url_for('signup_page') }}">Create one</a>
+    </p>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/login.js') }}"></script>
+{% endblock %}

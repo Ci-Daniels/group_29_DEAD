@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% set logged_in = true %}
+
+{% block title %}DEAD System &middot; Compliance{% endblock %}
+
+{% block content %}
+<main class="page">
+  <header class="page__header">
+    <h1>Compliance &amp; Legal</h1>
+    <p class="page__subtitle">Download consent forms, review legal requirements, and upload verification documents.</p>
+  </header>
+
+  <!-- Consent form download -->
+  <div class="panel" style="margin-bottom: 24px;">
+    <h2 class="panel__title">Consent &amp; Legal Forms</h2>
+    <p style="font-size:14px;color:var(--color-text-muted);margin:0 0 16px;">
+      Download and sign the required consent documents. These must be presented to legal authorities before asset transfer.
+    </p>
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+      <a href="#" class="btn btn--ghost" onclick="return false;">
+        &#128196; Asset Transfer Consent Form
+      </a>
+      <a href="#" class="btn btn--ghost" onclick="return false;">
+        &#128196; Biometric Data Processing Agreement
+      </a>
+      <a href="#" class="btn btn--ghost" onclick="return false;">
+        &#128196; Beneficiary Acceptance Letter
+      </a>
+      <a href="#" class="btn btn--ghost" onclick="return false;">
+        &#128196; Legal Heir Affidavit Template
+      </a>
+    </div>
+  </div>
+
+  <!-- Upload signed documents -->
+  <div class="panel" style="margin-bottom: 24px;">
+    <h2 class="panel__title">Upload Signed Documents</h2>
+    <form id="compliance-form" class="auth-form">
+      <label class="field">
+        <span class="field__label">Document Type</span>
+        <select name="doc_type" required class="field__select">
+          <option value="" disabled selected>Select document type</option>
+          <option value="consent_form">Signed Consent Form</option>
+          <option value="death_certificate">Death Certificate</option>
+          <option value="id_proof">National ID / Passport Copy</option>
+          <option value="legal_affidavit">Legal Affidavit</option>
+          <option value="other">Other</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span class="field__label">Upload File</span>
+        <input type="file" name="document" accept=".pdf,.jpg,.png,.doc,.docx" style="border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:10px 14px;font-size:14px;font-family:inherit;background:var(--color-bg);" />
+      </label>
+
+      <button type="submit" class="btn btn--primary">Upload Document</button>
+    </form>
+    <p id="compliance-message" class="auth-success" hidden></p>
+  </div>
+
+  <!-- Uploaded documents list -->
+  <div class="panel">
+    <div class="section-header">
+      <h3 class="section-header__title">Uploaded Documents</h3>
+      <span style="font-size:13px;color:var(--color-text-muted);">3 documents</span>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Document Type</th>
+          <th>File Name</th>
+          <th>Upload Date</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Death Certificate</td>
+          <td>death_cert_john_doe.pdf</td>
+          <td>2025-08-10</td>
+          <td><span class="badge badge--success">Verified</span></td>
+        </tr>
+        <tr>
+          <td>National ID Copy</td>
+          <td>id_john_doe.jpg</td>
+          <td>2025-06-14</td>
+          <td><span class="badge badge--success">Verified</span></td>
+        </tr>
+        <tr>
+          <td>Legal Affidavit</td>
+          <td>affidavit_heir.pdf</td>
+          <td>2025-08-11</td>
+          <td><span class="badge badge--warning">Pending Review</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/compliance.js') }}"></script>
+{% endblock %}

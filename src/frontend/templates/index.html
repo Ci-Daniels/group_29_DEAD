@@ -1,99 +1,125 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Estate Access &middot; Dashboard</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
-</head>
-<body>
-  <nav class="navbar">
-    <div class="navbar__brand">
-      <span class="navbar__logo">◈</span>
-      <span>Estate Access</span>
+{% extends "base.html" %}
+
+{% block title %}DEAD System &middot; Deceased Electronic Assets Discovery{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="hero">
+  <div class="hero__inner">
+    <h1 class="hero__title">Your Digital Legacy,<br />Securely Passed On</h1>
+    <p class="hero__subtitle">
+      Discover, organize, and transfer digital assets to your loved ones
+      with AI-powered asset scanning and facial biometric verification.
+    </p>
+    <div class="hero__actions">
+      <a href="{{ url_for('signup_page') }}" class="btn btn--primary btn--lg">Get Started</a>
+      <a href="{{ url_for('login_page') }}" class="btn btn--ghost btn--lg">Sign In</a>
     </div>
-    <div class="navbar__links">
-      <a href="{{ url_for('index') }}" class="navbar__link navbar__link--active">Dashboard</a>
-      <a href="{{ url_for('register_page') }}" class="navbar__link">Register</a>
-      <a href="{{ url_for('verify_page') }}" class="navbar__link">Verify</a>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="page">
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-card__icon feature-card__icon--indigo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.7 0 3-4 3-9s-1.3-9-3-9m0 18c-1.7 0-3-4-3-9s1.3-9 3-9m-9 9a9 9 0 019-9" />
+        </svg>
+      </div>
+      <h3>Asset Discovery</h3>
+      <p>AI scans your email metadata to identify digital assets you may have forgotten — bank accounts, crypto, social media, and more.</p>
     </div>
-  </nav>
 
-  <main class="page">
-    <header class="page__header">
-      <h1>Digital Estate Assets Discovery</h1>
-      <p class="page__subtitle">Facial biometric enrollment and verification, powered by SCRFD + ArcFace.</p>
-    </header>
-
-    <section class="card-grid">
-      <a href="{{ url_for('register_page') }}" class="action-card">
-        <div class="action-card__icon action-card__icon--indigo">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-            <circle cx="12" cy="8" r="4"></circle>
-            <path d="M4 20c0-4 4-6 8-6s8 2 8 6"></path>
-            <path d="M19 8h4M21 6v4"></path>
-          </svg>
-        </div>
-        <h3>Register Beneficiary</h3>
-        <p>Enroll a new beneficiary's face with ~20 guided samples.</p>
-        <span class="action-card__cta">Start registration →</span>
-      </a>
-
-      <a href="{{ url_for('verify_page') }}" class="action-card">
-        <div class="action-card__icon action-card__icon--teal">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-            <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"></path>
-            <path d="M9 12l2 2 4-4"></path>
-          </svg>
-        </div>
-        <h3>Verify Beneficiary</h3>
-        <p>Confirm identity with a live liveness check and face match.</p>
-        <span class="action-card__cta">Start verification →</span>
-      </a>
-
-      <div class="action-card action-card--placeholder">
-        <div class="action-card__icon action-card__icon--slate">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-            <circle cx="8" cy="9" r="3"></circle>
-            <path d="M2 20c0-3.3 2.7-5 6-5s6 1.7 6 5"></path>
-            <circle cx="17" cy="8" r="2.5"></circle>
-            <path d="M15.5 13c2.5 0 5 1.3 5.5 4"></path>
-          </svg>
-        </div>
-        <h3>Registered Beneficiaries</h3>
-        <p>Browse enrolled beneficiaries and their status.</p>
-        <span class="action-card__cta action-card__cta--muted">Coming soon</span>
+    <div class="feature-card">
+      <div class="feature-card__icon feature-card__icon--teal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"></path>
+          <path d="M9 12l2 2 4-4"></path>
+        </svg>
       </div>
-    </section>
+      <h3>Biometric Verification</h3>
+      <p>Next of kin are verified through facial recognition with liveness detection before any asset access is granted.</p>
+    </div>
 
-    <section class="status-panel">
-      <h2 class="status-panel__title">System Status</h2>
-      <div class="status-panel__grid">
-        <div class="status-item">
-          <span class="status-dot status-dot--on"></span>
-          <div>
-            <p class="status-item__label">AI Engine</p>
-            <p class="status-item__value">InsightFace (SCRFD + ArcFace)</p>
-          </div>
-        </div>
-        <div class="status-item">
-          <span class="status-dot status-dot--on"></span>
-          <div>
-            <p class="status-item__label">Runtime</p>
-            <p class="status-item__value">ONNX Runtime (CPU)</p>
-          </div>
-        </div>
-        <div class="status-item">
-          <span class="status-dot status-dot--on"></span>
-          <div>
-            <p class="status-item__label">Storage</p>
-            <p class="status-item__value">Local embeddings (data/embeddings)</p>
-          </div>
-        </div>
+    <div class="feature-card">
+      <div class="feature-card__icon feature-card__icon--slate">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="8" cy="9" r="3"></circle>
+          <path d="M2 20c0-3.3 2.7-5 6-5s6 1.7 6 5"></path>
+          <circle cx="17" cy="8" r="2.5"></circle>
+          <path d="M15.5 13c2.5 0 5 1.3 5.5 4"></path>
+        </svg>
       </div>
-    </section>
-  </main>
-</body>
-</html>
+      <h3>Beneficiary Management</h3>
+      <p>Assign trusted next of kin, define roles and permissions, and set fail-safe options if beneficiaries decline.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-card__icon feature-card__icon--warning">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M15 17h5l-1.4-1.4A2 2 0 0017 15h-2m-6 0H4l1.4 1.4A2 2 0 007 17h2m6-4V5a2 2 0 00-2-2H9a2 2 0 00-2 2v8m10 0a2 2 0 012 2v1a2 2 0 01-2 2H7a2 2 0 01-2-2v-1a2 2 0 012-2h10z"></path>
+        </svg>
+      </div>
+      <h3>Death Verification</h3>
+      <p>Integration with national death registries ensures assets are only released upon verified death certificate submission.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-card__icon feature-card__icon--success">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+        </svg>
+      </div>
+      <h3>Automated Notifications</h3>
+      <p>Next of kin are automatically notified when assets become available, with a structured compliance workflow.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-card__icon feature-card__icon--indigo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="3" y="11" width="18" height="10" rx="2"></rect>
+          <path d="M7 11V7a5 5 0 0110 0v4"></path>
+        </svg>
+      </div>
+      <h3>Compliance First</h3>
+      <p>Consent forms, legal checkpoints, and secure document upload ensure every transfer follows due legal process.</p>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section class="page">
+  <div class="steps-section">
+    <h2 class="steps-section__title">How It Works</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step__number">1</div>
+        <h4>Register Your Assets</h4>
+        <p>Declare digital assets and let AI scan your email for ones you may have missed.</p>
+      </div>
+      <div class="step__arrow">&rarr;</div>
+      <div class="step">
+        <div class="step__number">2</div>
+        <h4>Assign Beneficiaries</h4>
+        <p>Name your next of kin, assign roles, and enroll their face for biometric verification.</p>
+      </div>
+      <div class="step__arrow">&rarr;</div>
+      <div class="step">
+        <div class="step__number">3</div>
+        <h4>Secure Transfer</h4>
+        <p>Upon verified passing, beneficiaries are notified, verified, and granted access.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="cta-section__inner">
+    <h2>Start protecting your digital legacy today.</h2>
+    <p>Join thousands securing their digital assets for the next generation.</p>
+    <a href="{{ url_for('signup_page') }}" class="btn btn--primary btn--lg">Create Your Account</a>
+  </div>
+</section>
+{% endblock %}

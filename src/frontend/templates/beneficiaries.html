@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% set logged_in = true %}
+
+{% block title %}DEAD System &middot; Beneficiaries{% endblock %}
+
+{% block content %}
+<main class="page">
+  <header class="page__header">
+    <h1>Next of Kin &amp; Beneficiaries</h1>
+    <p class="page__subtitle">Manage your beneficiaries, assign roles, and configure fail-safe options.</p>
+  </header>
+
+  <!-- Add beneficiary form -->
+  <div class="panel" style="margin-bottom: 24px;">
+    <h2 class="panel__title">Add Next of Kin</h2>
+    <form id="beneficiary-form" class="auth-form">
+      <div class="form-row">
+        <label class="field">
+          <span class="field__label">Full Name</span>
+          <input type="text" name="name" required placeholder="e.g. Jane Doe" />
+        </label>
+        <label class="field">
+          <span class="field__label">National ID / Passport</span>
+          <input type="text" name="national_id" required placeholder="e.g. B87654321" />
+        </label>
+      </div>
+      <div class="form-row">
+        <label class="field">
+          <span class="field__label">Relationship</span>
+          <input type="text" name="relationship" required placeholder="e.g. Spouse, Child, Sibling" />
+        </label>
+        <label class="field">
+          <span class="field__label">Assigned Role</span>
+          <select name="role" required class="field__select">
+            <option value="" disabled selected>Select role</option>
+            <option value="admin">Admin (full access)</option>
+            <option value="viewer">Viewer (read-only)</option>
+            <option value="executor">Executor (legal representative)</option>
+          </select>
+        </label>
+      </div>
+      <button type="submit" class="btn btn--primary">Add Beneficiary</button>
+    </form>
+    <p id="beneficiary-message" class="auth-success" hidden></p>
+  </div>
+
+  <!-- Beneficiary list -->
+  <div class="panel" style="margin-bottom: 24px;">
+    <div class="section-header">
+      <h3 class="section-header__title">Registered Next of Kin</h3>
+      <span style="font-size:13px;color:var(--color-text-muted);" id="beneficiary-count">3 beneficiaries</span>
+    </div>
+    <table class="data-table" id="beneficiary-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>National ID</th>
+          <th>Relationship</th>
+          <th>Role</th>
+          <th>Decision Status</th>
+          <th>Face Enrolled</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="beneficiary-tbody">
+        <!-- Populated dynamically -->
+      </tbody>
+    </table>
+    <div id="beneficiary-empty" class="empty-state" hidden>
+      <div class="empty-state__icon">&#128101;</div>
+      <p class="empty-state__text">No next of kin added yet. Add your first beneficiary above.</p>
+    </div>
+  </div>
+
+  <!-- Fail-safe section -->
+  <div class="panel">
+    <div class="section-header">
+      <h3 class="section-header__title">Fail-Safe Configuration</h3>
+    </div>
+    <p style="font-size:14px;color:var(--color-text-muted);margin:0 0 16px;">
+      If all next of kin decline or are unreachable, your assets will be transferred according to your fail-safe preference.
+    </p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div style="padding:16px;background:var(--color-bg);border-radius:var(--radius-sm);border:1px solid var(--color-border);">
+        <p style="font-weight:600;margin:0 0 4px;">Primary Option</p>
+        <p style="margin:0;color:var(--color-text-muted);font-size:14px;">Charity: Red Cross Kenya</p>
+      </div>
+      <div style="padding:16px;background:var(--color-bg);border-radius:var(--radius-sm);border:1px solid var(--color-border);">
+        <p style="font-weight:600;margin:0 0 4px;">Secondary Option</p>
+        <p style="margin:0;color:var(--color-text-muted);font-size:14px;">Government: Kenya Revenue Authority</p>
+      </div>
+    </div>
+    <a href="{{ url_for('failsafe_page') }}" class="btn btn--ghost" style="margin-top:16px;display:inline-block;">Edit Fail-Safe Settings</a>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/beneficiaries.js') }}"></script>
+{% endblock %}
