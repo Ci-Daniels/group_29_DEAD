@@ -84,6 +84,17 @@ TOKEN_FILE = os.environ.get(
     "token.json",
 )
 
+# Optional explicit callback URI override (must match Google Auth UI exactly).
+GOOGLE_OAUTH_REDIRECT_URI = os.environ.get(
+    "GOOGLE_OAUTH_REDIRECT_URI",
+    "http://127.0.0.1:5000/oauth2callback",
+)
+
+# OAuthlib enforces HTTPS token exchange by default.
+# For local loopback development callbacks only, allow HTTP transport.
+if GOOGLE_OAUTH_REDIRECT_URI.startswith(("http://127.0.0.1", "http://localhost")):
+    os.environ.setdefault("OAUTHLIB_INSECURE_TRANSPORT", "1")
+
 
 # --------------------------------------------------------------------------
 # Shared AI components
@@ -230,6 +241,55 @@ def scan_email():
     return render_template(
         "scan_emails.html",
         gmail_connected=_gmail_credentials_available(),
+    )
+
+
+@app.route("/emails")
+def emails_page():
+    """Display the first 10 inbox emails after Gmail is connected."""
+    credentials = _get_gmail_credentials()
+
+    if credentials is None:
+        return redirect(url_for("scan_email"))
+
+    messages: list[dict] = []
+    error_message = None
+
+    try:
+        service = discovery.build(
+            "gmail",
+            "v1",
+            credentials=credentials,
+            cache_discovery=False,
+        )
+
+        response = (
+            service.users()
+            .messages()
+            .list(
+                userId="me",
+                labelIds=["INBOX"],
+                maxResults=10,
+                q="-category:promotions",
+            )
+            .execute()
+        )
+
+        for message_ref in response.get("messages", []):
+            try:
+                messages.append(_get_message_metadata(service, message_ref["id"]))
+            except HttpError:
+                continue
+
+    except HttpError as exc:
+        error_message = f"Gmail API request failed: {exc}"
+    except Exception as exc:
+        error_message = f"Unexpected Gmail error: {exc}"
+
+    return render_template(
+        "emails.html",
+        messages=messages,
+        error_message=error_message,
     )
 
 
@@ -492,12 +552,14 @@ def _get_gmail_credentials() -> Optional[Credentials]:
     return None
 
 
+def _oauth_redirect_uri() -> str:
+    """Return a stable OAuth callback URI for Google."""
+    return GOOGLE_OAUTH_REDIRECT_URI
+
+
 @app.route("/authorize")
 def authorize():
-    """
-    Start the Google OAuth authorization flow.
-    """
-
+    """Start the Google OAuth authorization flow."""
     if not os.path.exists(CLIENT_SECRETS_FILE):
         return (
             f"Google OAuth credentials file not found. Expected: {CLIENT_SECRETS_FILE}",
@@ -507,15 +569,13 @@ def authorize():
     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
         CLIENT_SECRETS_FILE,
         scopes=GMAIL_SCOPES,
+        autogenerate_code_verifier=True,
     )
 
     # IMPORTANT:
     # This is the URI that must be registered
     # in Google Cloud Console.
-    flow.redirect_uri = url_for(
-        "oauth2callback",
-        _external=True,
-    )
+    flow.redirect_uri = _oauth_redirect_uri()
 
     authorization_url, state = flow.authorization_url(
         access_type="offline",
@@ -526,22 +586,28 @@ def authorize():
     # OAuth state must survive the redirect to Google
     # and the later callback request.
     session["oauth_state"] = state
+    session["oauth_code_verifier"] = flow.code_verifier
 
     return redirect(authorization_url)
 
 
 @app.route("/oauth2callback")
 def oauth2callback():
-    """
-    Receive Google's OAuth callback and exchange
+    """Receive Google's OAuth callback and exchange
     the authorization code for credentials.
     """
-
     state = session.get("oauth_state")
+    code_verifier = session.get("oauth_code_verifier")
 
     if not state:
         return (
             "Missing OAuth state. Please start the authorization process again.",
+            400,
+        )
+
+    if not code_verifier:
+        return (
+            "Missing OAuth code verifier. Please start the authorization process again.",
             400,
         )
 
@@ -555,12 +621,10 @@ def oauth2callback():
         CLIENT_SECRETS_FILE,
         scopes=GMAIL_SCOPES,
         state=state,
+        code_verifier=code_verifier,
     )
 
-    flow.redirect_uri = url_for(
-        "oauth2callback",
-        _external=True,
-    )
+    flow.redirect_uri = _oauth_redirect_uri()
 
     try:
         flow.fetch_token(authorization_response=request.url)
@@ -584,8 +648,9 @@ def oauth2callback():
         token.write(credentials.to_json())
 
     session.pop("oauth_state", None)
+    session.pop("oauth_code_verifier", None)
 
-    return redirect(url_for("scan_email"))
+    return redirect(url_for("emails_page"))
 
 
 # --------------------------------------------------------------------------
@@ -714,7 +779,7 @@ def api_emails():
 
         max_results = request.args.get(
             "max_results",
-            default=20,
+            default=200,
             type=int,
         )
 
@@ -730,6 +795,7 @@ def api_emails():
             "userId": "me",
             "labelIds": ["INBOX"],
             "maxResults": max_results,
+            "q": "-category:promotions",
         }
 
         if page_token:
@@ -826,4 +892,4 @@ def logout_google():
 # --------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True, threaded=True, ssl_context="adhoc")
+    app.run(host="127.0.0.1", port=5000, debug=True, threaded=True)

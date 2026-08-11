@@ -3,23 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scan Emails</title>
+    <title>Estate Access · Scan Email</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 </head>
 
 <body>
+    <nav class="navbar">
+        <div class="navbar__brand">
+            <span class="navbar__logo">◈</span>
+            <span>Estate Access</span>
+        </div>
+        <div class="navbar__links">
+            <a href="{{ url_for('index') }}" class="navbar__link">Dashboard</a>
+            <a href="{{ url_for('register_page') }}" class="navbar__link">Register</a>
+            <a href="{{ url_for('verify_page') }}" class="navbar__link">Verify</a>
+            <a href="{{ url_for('scan_email') }}" class="navbar__link navbar__link--active">Scan Email</a>
+        </div>
+    </nav>
 
-    <h1>Scan Gmail</h1>
+    <main class="page">
+        <header class="page__header">
+            <h1>Scan Gmail</h1>
+            <p class="page__subtitle">Connect and preview your most recent inbox emails.</p>
+        </header>
 
-    <p>
-        Connect your Gmail account to allow the application
-        to read your emails.
-    </p>
-
-    <a href="{{ url_for('authorize') }}">
-        <button type="button">
-            Connect Gmail
-        </button>
-    </a>
+        <section class="panel" style="max-width: 700px;">
+            {% if gmail_connected %}
+                <p>Your Gmail account is connected.</p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <a href="{{ url_for('emails_page') }}" class="btn btn--primary">View First 10 Emails</a>
+                    <a href="{{ url_for('logout_google') }}" class="btn btn--ghost">Disconnect Gmail</a>
+                </div>
+            {% else %}
+                <p>
+                    Connect your Gmail account to allow the application
+                    to read your emails.
+                </p>
+                <a href="{{ url_for('authorize') }}" class="btn btn--primary">Connect Gmail</a>
+            {% endif %}
+        </section>
+    </main>
 
 </body>
 </html>

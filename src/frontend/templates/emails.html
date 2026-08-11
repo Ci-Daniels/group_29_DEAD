@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Estate Access · Inbox Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <style>
+    .email-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .email-item {
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      background: var(--color-surface);
+    }
+
+    .email-item__subject {
+      margin: 0 0 4px;
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .email-item__meta {
+      margin: 0;
+      color: var(--color-text-muted);
+      font-size: 13px;
+    }
+
+    .email-item__snippet {
+      margin: 10px 0 0;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar__brand">
+      <span class="navbar__logo">◈</span>
+      <span>Estate Access</span>
+    </div>
+    <div class="navbar__links">
+      <a href="{{ url_for('index') }}" class="navbar__link">Dashboard</a>
+      <a href="{{ url_for('register_page') }}" class="navbar__link">Register</a>
+      <a href="{{ url_for('verify_page') }}" class="navbar__link">Verify</a>
+      <a href="{{ url_for('scan_email') }}" class="navbar__link navbar__link--active">Scan Email</a>
+    </div>
+  </nav>
+
+  <main class="page">
+    <header class="page__header">
+      <h1>Inbox Preview</h1>
+      <p class="page__subtitle">Showing up to the first 10 emails from your inbox.</p>
+    </header>
+
+    <section class="panel" style="display: grid; gap: 14px;">
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <a href="{{ url_for('emails_page') }}" class="btn btn--primary">Refresh</a>
+        <a href="{{ url_for('scan_email') }}" class="btn btn--ghost">Back</a>
+      </div>
+
+      {% if error_message %}
+        <p class="result-banner result-banner--error" style="display: block;">
+          {{ error_message }}
+        </p>
+      {% elif messages %}
+        <div class="email-list">
+          {% for message in messages %}
+            <article class="email-item">
+              <h2 class="email-item__subject">{{ message.subject or '(No Subject)' }}</h2>
+              <p class="email-item__meta">
+                From: {{ message.from or 'Unknown sender' }}<br>
+                Date: {{ message.date or 'Unknown date' }}
+              </p>
+              <p class="email-item__snippet">{{ message.snippet or 'No preview available.' }}</p>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p>No inbox emails were returned.</p>
+      {% endif %}
+    </section>
+  </main>
+</body>
+</html>
