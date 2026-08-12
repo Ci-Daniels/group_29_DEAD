@@ -45,6 +45,10 @@ class EmailEvaluation:
             "GOOGLE_OAUTH_REDIRECT_URI",
             "http://127.0.0.1:5000/oauth2callback",
         )
+        self.default_query = os.environ.get(
+            "GMAIL_DEFAULT_QUERY",
+            "-category:promotions -label:^smartlabel_promo",
+        )
 
         if self.redirect_uri.startswith(("http://127.0.0.1", "http://localhost")):
             os.environ.setdefault("OAUTHLIB_INSECURE_TRANSPORT", "1")
@@ -272,7 +276,7 @@ class EmailEvaluation:
         self,
         max_results: int = 100,
         page_token: str | None = None,
-        query: str = "-category:promotions",
+        query: str | None = None,
     ) -> dict:
         """Fetch inbox messages with metadata."""
         service = self._build_service()
@@ -283,7 +287,7 @@ class EmailEvaluation:
             "userId": "me",
             "labelIds": ["INBOX"],
             "maxResults": max_results,
-            "q": query,
+            "q": query if query is not None else self.default_query,
         }
 
         if page_token:
@@ -301,7 +305,10 @@ class EmailEvaluation:
 
         for message_ref in response.get("messages", []):
             try:
-                messages.append(self._get_message_metadata(service, message_ref["id"]))
+                message = self._get_message_metadata(service, message_ref["id"])
+                if "CATEGORY_PROMOTIONS" in message.get("label_ids", []):
+                    continue
+                messages.append(message)
             except HttpError:
                 continue
 
@@ -314,7 +321,7 @@ class EmailEvaluation:
     def fetch_all_inbox_messages(
         self,
         max_results: int | None = None,
-        query: str = "-category:promotions",
+        query: str | None = None,
         page_size: int = 500,
     ) -> list[dict]:
         """Fetch multiple inbox pages until max_results or mailbox end is reached."""
