@@ -18,10 +18,7 @@ import os
 import threading
 import time
 import uuid
-from pathlib import Path
-from typing import Dict, Optional
 
-import google_auth_oauthlib.flow
 from flask import (
     Flask,
     Response,
@@ -32,10 +29,7 @@ from flask import (
     session,
     url_for,
 )
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from googleapiclient import discovery
-from googleapiclient.errors import HttpError
+from src.backend.email_scanning.main import EmailEvaluation, EmailEvaluationError
 from src.backend.facial_recognition.config import EMBEDDINGS_DIR
 from src.backend.facial_recognition.modules.enrollment import FaceEnrollment
 from src.backend.facial_recognition.modules.exceptions import (
@@ -69,34 +63,6 @@ app.secret_key = os.environ.get(
 
 
 # --------------------------------------------------------------------------
-# Gmail configuration
-# --------------------------------------------------------------------------
-
-GMAIL_SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
-
-CLIENT_SECRETS_FILE = os.environ.get(
-    "GOOGLE_CLIENT_SECRETS_FILE",
-    "credentials.json",
-)
-
-TOKEN_FILE = os.environ.get(
-    "GOOGLE_TOKEN_FILE",
-    "token.json",
-)
-
-# Optional explicit callback URI override (must match Google Auth UI exactly).
-GOOGLE_OAUTH_REDIRECT_URI = os.environ.get(
-    "GOOGLE_OAUTH_REDIRECT_URI",
-    "http://127.0.0.1:5000/oauth2callback",
-)
-
-# OAuthlib enforces HTTPS token exchange by default.
-# For local loopback development callbacks only, allow HTTP transport.
-if GOOGLE_OAUTH_REDIRECT_URI.startswith(("http://127.0.0.1", "http://localhost")):
-    os.environ.setdefault("OAUTHLIB_INSECURE_TRANSPORT", "1")
-
-
-# --------------------------------------------------------------------------
 # Shared AI components
 # --------------------------------------------------------------------------
 
@@ -110,7 +76,7 @@ _liveness_check = LivenessCheck()
 # In-memory session registry
 # --------------------------------------------------------------------------
 
-_sessions: Dict[str, dict] = {}
+_sessions: dict[str, dict] = {}
 _sessions_lock = threading.Lock()
 
 
@@ -131,7 +97,7 @@ def _new_session(kind: str, beneficiary_id: str) -> str:
     return session_id
 
 
-def _get_session(session_id: str) -> Optional[dict]:
+def _get_session(session_id: str) -> dict | None:
     """Retrieve a biometric session."""
     with _sessions_lock:
         return _sessions.get(session_id)
@@ -152,7 +118,6 @@ _EXPECTED_ERRORS = (
 
 def _run_enrollment(session_id: str, metadata: dict) -> None:
     """Run FaceEnrollment.enroll() on a background thread."""
-
     session_data = _get_session(session_id)
 
     if session_data is None:
@@ -240,49 +205,23 @@ def scan_email():
     """Gmail scanning page."""
     return render_template(
         "scan_emails.html",
-        gmail_connected=_gmail_credentials_available(),
+        gmail_connected=email_evaluation.credentials_available(),
     )
 
 
 @app.route("/emails")
 def emails_page():
     """Display the first 10 inbox emails after Gmail is connected."""
-    credentials = _get_gmail_credentials()
-
-    if credentials is None:
+    if not email_evaluation.credentials_available():
         return redirect(url_for("scan_email"))
 
-    messages: list[dict] = []
+    messages = []
     error_message = None
 
     try:
-        service = discovery.build(
-            "gmail",
-            "v1",
-            credentials=credentials,
-            cache_discovery=False,
-        )
-
-        response = (
-            service.users()
-            .messages()
-            .list(
-                userId="me",
-                labelIds=["INBOX"],
-                maxResults=10,
-                q="-category:promotions",
-            )
-            .execute()
-        )
-
-        for message_ref in response.get("messages", []):
-            try:
-                messages.append(_get_message_metadata(service, message_ref["id"]))
-            except HttpError:
-                continue
-
-    except HttpError as exc:
-        error_message = f"Gmail API request failed: {exc}"
+        messages = email_evaluation.fetch_recent_messages(max_results=10)
+    except EmailEvaluationError as exc:
+        error_message = str(exc)
     except Exception as exc:
         error_message = f"Unexpected Gmail error: {exc}"
 
@@ -416,7 +355,6 @@ def api_session_status(session_id: str):
 
 def _mjpeg_stream(session_id: str):
     """Generate multipart JPEG frames."""
-
     boundary = b"--frame"
 
     while True:
@@ -446,7 +384,6 @@ def _mjpeg_stream(session_id: str):
 @app.route("/video_feed/<session_id>")
 def video_feed(session_id: str):
     """MJPEG live preview endpoint."""
-
     return Response(
         _mjpeg_stream(session_id),
         mimetype=("multipart/x-mixed-replace; boundary=frame"),
@@ -461,7 +398,6 @@ def video_feed(session_id: str):
 @app.route("/api/beneficiaries")
 def api_beneficiaries():
     """List enrolled beneficiaries."""
-
     if not EMBEDDINGS_DIR.exists():
         return jsonify([])
 
@@ -488,107 +424,17 @@ def api_beneficiaries():
 # Gmail OAuth + API
 # ==========================================================================
 
-
-def _gmail_credentials_available() -> bool:
-    """
-    Check whether we have usable Gmail credentials.
-
-    A token.json may contain an expired access token while still
-    having a refresh token. That is still considered connected.
-    """
-
-    if not os.path.exists(TOKEN_FILE):
-        return False
-
-    try:
-        credentials = Credentials.from_authorized_user_file(
-            TOKEN_FILE,
-            GMAIL_SCOPES,
-        )
-
-        return bool(credentials and (credentials.valid or credentials.refresh_token))
-
-    except Exception:
-        return False
-
-
-def _get_gmail_credentials() -> Optional[Credentials]:
-    """
-    Load Gmail credentials from token.json.
-
-    Refresh the access token automatically when necessary.
-    """
-
-    if not os.path.exists(TOKEN_FILE):
-        return None
-
-    try:
-        credentials = Credentials.from_authorized_user_file(
-            TOKEN_FILE,
-            GMAIL_SCOPES,
-        )
-    except Exception:
-        return None
-
-    if credentials.valid:
-        return credentials
-
-    if credentials.expired and credentials.refresh_token:
-        try:
-            credentials.refresh(Request())
-
-            with open(
-                TOKEN_FILE,
-                "w",
-                encoding="utf-8",
-            ) as token:
-                token.write(credentials.to_json())
-
-            return credentials
-
-        except Exception:
-            return None
-
-    return None
-
-
-def _oauth_redirect_uri() -> str:
-    """Return a stable OAuth callback URI for Google."""
-    return GOOGLE_OAUTH_REDIRECT_URI
+email_evaluation = EmailEvaluation()
 
 
 @app.route("/authorize")
 def authorize():
     """Start the Google OAuth authorization flow."""
-    if not os.path.exists(CLIENT_SECRETS_FILE):
-        return (
-            f"Google OAuth credentials file not found. Expected: {CLIENT_SECRETS_FILE}",
-            500,
-        )
-
-    flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
-        CLIENT_SECRETS_FILE,
-        scopes=GMAIL_SCOPES,
-        autogenerate_code_verifier=True,
-    )
-
-    # IMPORTANT:
-    # This is the URI that must be registered
-    # in Google Cloud Console.
-    flow.redirect_uri = _oauth_redirect_uri()
-
-    authorization_url, state = flow.authorization_url(
-        access_type="offline",
-        include_granted_scopes="true",
-        prompt="consent",
-    )
-
-    # OAuth state must survive the redirect to Google
-    # and the later callback request.
-    session["oauth_state"] = state
-    session["oauth_code_verifier"] = flow.code_verifier
-
-    return redirect(authorization_url)
+    try:
+        authorization_url = email_evaluation.start_authorization(session)
+        return redirect(authorization_url)
+    except EmailEvaluationError as exc:
+        return str(exc), exc.status_code
 
 
 @app.route("/oauth2callback")
@@ -596,158 +442,19 @@ def oauth2callback():
     """Receive Google's OAuth callback and exchange
     the authorization code for credentials.
     """
-    state = session.get("oauth_state")
-    code_verifier = session.get("oauth_code_verifier")
-
-    if not state:
-        return (
-            "Missing OAuth state. Please start the authorization process again.",
-            400,
-        )
-
-    if not code_verifier:
-        return (
-            "Missing OAuth code verifier. Please start the authorization process again.",
-            400,
-        )
-
-    if not os.path.exists(CLIENT_SECRETS_FILE):
-        return (
-            "Google OAuth credentials file not found.",
-            500,
-        )
-
-    flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
-        CLIENT_SECRETS_FILE,
-        scopes=GMAIL_SCOPES,
-        state=state,
-        code_verifier=code_verifier,
-    )
-
-    flow.redirect_uri = _oauth_redirect_uri()
-
     try:
-        flow.fetch_token(authorization_response=request.url)
-    except Exception as exc:
-        return (
-            "Google authorization failed: " + str(exc),
-            400,
+        email_evaluation.complete_authorization(
+            flask_session=session,
+            authorization_response_url=request.url,
         )
-
-    credentials = flow.credentials
-
-    # Persist credentials locally for this prototype.
-    #
-    # IMPORTANT:
-    # Do not commit token.json to source control.
-    with open(
-        TOKEN_FILE,
-        "w",
-        encoding="utf-8",
-    ) as token:
-        token.write(credentials.to_json())
-
-    session.pop("oauth_state", None)
-    session.pop("oauth_code_verifier", None)
-
-    return redirect(url_for("emails_page"))
-
-
-# --------------------------------------------------------------------------
-# Gmail API helpers
-# --------------------------------------------------------------------------
-
-
-def _get_header(
-    message: dict,
-    header_name: str,
-) -> str:
-    """Extract a Gmail message header."""
-
-    payload = message.get(
-        "payload",
-        {},
-    )
-
-    headers = payload.get(
-        "headers",
-        [],
-    )
-
-    for header in headers:
-        if header.get("name", "").lower() == header_name.lower():
-            return header.get(
-                "value",
-                "",
-            )
-
-    return ""
-
-
-def _get_message_metadata(
-    service,
-    message_id: str,
-) -> dict:
-    """
-    Fetch useful metadata for a single Gmail message.
-    """
-
-    message = (
-        service.users()
-        .messages()
-        .get(
-            userId="me",
-            id=message_id,
-            format="metadata",
-            metadataHeaders=[
-                "From",
-                "To",
-                "Subject",
-                "Date",
-            ],
-        )
-        .execute()
-    )
-
-    return {
-        "id": message.get("id"),
-        "thread_id": message.get("threadId"),
-        "snippet": message.get(
-            "snippet",
-            "",
-        ),
-        "from": _get_header(
-            message,
-            "From",
-        ),
-        "to": _get_header(
-            message,
-            "To",
-        ),
-        "subject": _get_header(
-            message,
-            "Subject",
-        ),
-        "date": _get_header(
-            message,
-            "Date",
-        ),
-        "label_ids": message.get(
-            "labelIds",
-            [],
-        ),
-    }
-
-
-# --------------------------------------------------------------------------
-# Gmail API: list messages
-# --------------------------------------------------------------------------
+        return redirect(url_for("emails_page"))
+    except EmailEvaluationError as exc:
+        return str(exc), exc.status_code
 
 
 @app.route("/api/emails")
 def api_emails():
-    """
-    List Gmail inbox messages.
+    """List Gmail inbox messages.
 
     Optional query parameters:
 
@@ -755,13 +462,10 @@ def api_emails():
         page_token
 
     Example:
-
         /api/emails?max_results=20
+
     """
-
-    credentials = _get_gmail_credentials()
-
-    if credentials is None:
+    if not email_evaluation.credentials_available():
         return jsonify(
             {
                 "error": "Gmail is not connected.",
@@ -770,78 +474,26 @@ def api_emails():
         ), 401
 
     try:
-        service = discovery.build(
-            "gmail",
-            "v1",
-            credentials=credentials,
-            cache_discovery=False,
-        )
-
         max_results = request.args.get(
             "max_results",
-            default=200,
+            default=2000,
             type=int,
         )
-
-        # Keep the API request sensible.
-        max_results = max(
-            1,
-            min(max_results, 100),
-        )
-
         page_token = request.args.get("page_token")
 
-        request_params = {
-            "userId": "me",
-            "labelIds": ["INBOX"],
-            "maxResults": max_results,
-            "q": "-category:promotions",
-        }
-
-        if page_token:
-            request_params["pageToken"] = page_token
-
-        response = service.users().messages().list(**request_params).execute()
-
-        message_refs = response.get(
-            "messages",
-            [],
+        result = email_evaluation.fetch_inbox_messages(
+            max_results=max_results,
+            page_token=page_token,
         )
 
-        messages = []
+        return jsonify(result)
 
-        for message_ref in message_refs:
-            try:
-                messages.append(
-                    _get_message_metadata(
-                        service,
-                        message_ref["id"],
-                    )
-                )
-            except HttpError:
-                # If an individual message cannot
-                # be retrieved, skip it rather than
-                # failing the whole request.
-                continue
-
+    except EmailEvaluationError as exc:
         return jsonify(
             {
-                "messages": messages,
-                "next_page_token": response.get("nextPageToken"),
-                "result_size_estimate": response.get(
-                    "resultSizeEstimate",
-                    len(messages),
-                ),
+                "error": str(exc),
             }
-        )
-
-    except HttpError as exc:
-        return jsonify(
-            {
-                "error": ("Gmail API request failed."),
-                "details": str(exc),
-            }
-        ), 502
+        ), exc.status_code
 
     except Exception as exc:
         return jsonify(
@@ -852,26 +504,6 @@ def api_emails():
         ), 500
 
 
-# --------------------------------------------------------------------------
-# Backwards-compatible Gmail endpoint
-# --------------------------------------------------------------------------
-
-
-@app.route("/request_email")
-def email_api_request():
-    """Backwards-compatible route.
-
-    Existing code that calls /request_email will now
-    receive the same response as /api/emails.
-    """
-    return api_emails()
-
-
-# --------------------------------------------------------------------------
-# Gmail disconnect
-# --------------------------------------------------------------------------
-
-
 @app.route("/logout/google")
 def logout_google():
     """Remove locally stored Gmail credentials.
@@ -880,9 +512,7 @@ def logout_google():
     It does not revoke the application's authorization
     from the user's Google account.
     """
-    if os.path.exists(TOKEN_FILE):
-        with contextlib.suppress(OSError):
-            os.remove(TOKEN_FILE)
+    email_evaluation.disconnect()
 
     return redirect(url_for("scan_email"))
 
