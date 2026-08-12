@@ -183,6 +183,53 @@ def _run_verification(session_id: str) -> None:
         session_data["done"] = True
 
 
+def _new_email_scan_session(max_results: int) -> str:
+    """Create and register a new email scanning session."""
+    session_id = uuid.uuid4().hex
+
+    with _sessions_lock:
+        _sessions[session_id] = {
+            "kind": "email_scan",
+            "done": False,
+            "error": None,
+            "result": None,
+            "progress": 1,
+            "status": "Queued for scanning...",
+            "max_results": max_results,
+        }
+
+    return session_id
+
+
+def _run_email_scan(session_id: str) -> None:
+    """Run email scanning in the background and update progress state."""
+    session_data = _get_session(session_id)
+
+    if session_data is None:
+        return
+
+    def _on_progress(progress: int, status: str) -> None:
+        session_data["progress"] = max(0, min(progress, 100))
+        session_data["status"] = status
+
+    try:
+        _on_progress(3, "Initializing scan worker...")
+        findings = email_evaluation.filter_emails(
+            max_results=session_data.get("max_results", 0),
+            progress_callback=_on_progress,
+        )
+        session_data["result"] = {
+            "findings": findings,
+            "count": len(findings),
+        }
+    except EmailEvaluationError as exc:
+        session_data["error"] = str(exc)
+    except Exception as exc:
+        session_data["error"] = f"Unexpected Gmail error: {exc}"
+    finally:
+        session_data["done"] = True
+
+
 # --------------------------------------------------------------------------
 # Page routes
 # --------------------------------------------------------------------------
@@ -215,20 +262,10 @@ def emails_page():
     if not email_evaluation.credentials_available():
         return redirect(url_for("scan_email"))
 
-    findings = []
-    error_message = None
-
-    try:
-        findings = email_evaluation.filter_emails(max_results=2000)
-    except EmailEvaluationError as exc:
-        error_message = str(exc)
-    except Exception as exc:
-        error_message = f"Unexpected Gmail error: {exc}"
-
     return render_template(
         "emails.html",
-        findings=findings,
-        error_message=error_message,
+        findings=[],
+        error_message=None,
     )
 
 
@@ -502,6 +539,49 @@ def api_emails():
                 "details": str(exc),
             }
         ), 500
+
+
+@app.route("/api/email-scan/start", methods=["POST"])
+def api_email_scan_start():
+    """Start scanning inbox emails in the background."""
+    if not email_evaluation.credentials_available():
+        return jsonify({"error": "Gmail is not connected."}), 401
+
+    payload = request.get_json(silent=True) or {}
+    max_results = payload.get("max_results", 0)
+
+    try:
+        max_results = int(max_results)
+    except (TypeError, ValueError):
+        return jsonify({"error": "max_results must be an integer."}), 400
+
+    session_id = _new_email_scan_session(max_results=max_results)
+    thread = threading.Thread(
+        target=_run_email_scan,
+        args=(session_id,),
+        daemon=True,
+    )
+    thread.start()
+
+    return jsonify({"session_id": session_id})
+
+
+@app.route("/api/email-scan/<session_id>/status")
+def api_email_scan_status(session_id: str):
+    """Return progress and results for an email scanning session."""
+    session_data = _get_session(session_id)
+    if session_data is None or session_data.get("kind") != "email_scan":
+        return jsonify({"error": "Unknown email scan session."}), 404
+
+    return jsonify(
+        {
+            "done": session_data["done"],
+            "error": session_data["error"],
+            "progress": session_data.get("progress", 0),
+            "status": session_data.get("status", ""),
+            "result": session_data["result"],
+        }
+    )
 
 
 @app.route("/logout/google")

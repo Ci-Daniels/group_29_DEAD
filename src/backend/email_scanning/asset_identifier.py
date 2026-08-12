@@ -21,6 +21,7 @@ import os
 import re
 from dataclasses import dataclass, field
 from functools import lru_cache
+from pathlib import Path
 
 from sentence_transformers import SentenceTransformer, util
 from transformers import pipeline
@@ -105,6 +106,50 @@ _CATEGORY_KEYWORDS = {
 }
 
 
+def _load_env_token_from_dotenv() -> str | None:
+    """Best-effort .env token loader for local development workflows."""
+    token = os.environ.get("HF_TOKEN")
+    if token:
+        return token.strip().strip('"').strip("'")
+
+    candidate_paths = [
+        Path.cwd() / ".env",
+        Path(__file__).resolve().parents[3] / ".env",
+    ]
+    for env_path in candidate_paths:
+        if not env_path.exists():
+            continue
+
+        try:
+            for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+                line = raw_line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if line.startswith("export "):
+                    line = line[len("export ") :].strip()
+                if not line.startswith("HF_TOKEN="):
+                    continue
+
+                _, value = line.split("=", 1)
+                token = value.strip().strip('"').strip("'")
+                if token:
+                    os.environ.setdefault("HF_TOKEN", token)
+                    return token
+        except OSError:
+            continue
+
+    return None
+
+
+def _hf_token() -> str | None:
+    return (
+        os.environ.get("HF_TOKEN")
+        or os.environ.get("HUGGINGFACE_HUB_TOKEN")
+        or os.environ.get("HUGGINGFACEHUB_API_TOKEN")
+        or _load_env_token_from_dotenv()
+    )
+
+
 @dataclass
 class AssetFinding:
     """Structured result of classifying one email."""
@@ -139,12 +184,14 @@ class AssetFinding:
 @lru_cache(maxsize=1)
 def _get_zero_shot_pipeline():
     local_only = os.environ.get("EMAIL_CLASSIFIER_LOCAL_ONLY", "1") == "1"
+    token = _hf_token()
     for model_name in ZERO_SHOT_MODELS:
         try:
             return pipeline(
                 "zero-shot-classification",
                 model=model_name,
                 device=-1,
+                token=token,
                 model_kwargs={"local_files_only": local_only},
             )
         except Exception:
@@ -155,12 +202,14 @@ def _get_zero_shot_pipeline():
 @lru_cache(maxsize=1)
 def _get_ner_pipeline():
     local_only = os.environ.get("EMAIL_CLASSIFIER_LOCAL_ONLY", "1") == "1"
+    token = _hf_token()
     try:
         return pipeline(
             "ner",
             model=NER_MODEL,
             aggregation_strategy="simple",
             device=-1,
+            token=token,
             model_kwargs={"local_files_only": local_only},
         )
     except Exception:
@@ -170,8 +219,13 @@ def _get_ner_pipeline():
 @lru_cache(maxsize=1)
 def _get_embedder() -> SentenceTransformer:
     local_only = os.environ.get("EMAIL_CLASSIFIER_LOCAL_ONLY", "1") == "1"
+    token = _hf_token()
     try:
-        return SentenceTransformer(EMBED_MODEL, local_files_only=local_only)
+        return SentenceTransformer(
+            EMBED_MODEL,
+            local_files_only=local_only,
+            token=token,
+        )
     except Exception:
         return None
 
@@ -284,7 +338,7 @@ def _classify_category_heuristic(
     has_amount = bool(re.search(r"\$\s?\d|\d+\.\d{2}|usd|eur|gbp", text))
 
     scores: dict[str, float] = {}
-    for key in categories.keys():
+    for key in categories:
         keywords = _CATEGORY_KEYWORDS.get(key, [])
         hits = sum(1 for token in keywords if token in text)
         base = 15.0 + (15.0 * hits)
@@ -350,6 +404,59 @@ def build_reasoning(
 
 
 # ---- public entry point ----------------------------------------------------
+
+
+def preload_models(force_download: bool = False) -> dict:
+    """Warm local model caches for faster, offline-ready email classification.
+
+    If force_download=True, temporarily allows remote fetches so missing
+    Hugging Face models are downloaded and cached on disk.
+    """
+    previous_local_only = os.environ.get("EMAIL_CLASSIFIER_LOCAL_ONLY")
+
+    if force_download:
+        os.environ["EMAIL_CLASSIFIER_LOCAL_ONLY"] = "0"
+
+    # Clear caches so we load with the current environment setting.
+    _get_zero_shot_pipeline.cache_clear()
+    _get_ner_pipeline.cache_clear()
+    _get_embedder.cache_clear()
+
+    token = _hf_token()
+    if token:
+        os.environ.setdefault("HF_TOKEN", token)
+
+    zero_shot = _get_zero_shot_pipeline()
+    ner = _get_ner_pipeline()
+    embedder = _get_embedder()
+
+    if force_download:
+        if previous_local_only is None:
+            os.environ.pop("EMAIL_CLASSIFIER_LOCAL_ONLY", None)
+        else:
+            os.environ["EMAIL_CLASSIFIER_LOCAL_ONLY"] = previous_local_only
+
+    zero_shot_model = None
+    if zero_shot is not None:
+        zero_shot_model = getattr(
+            getattr(zero_shot, "model", None),
+            "name_or_path",
+            None,
+        ) or getattr(
+            getattr(getattr(zero_shot, "model", None), "config", None),
+            "_name_or_path",
+            None,
+        )
+
+    return {
+        "hf_token_detected": bool(token),
+        "zero_shot_loaded": zero_shot is not None,
+        "zero_shot_model": zero_shot_model,
+        "ner_loaded": ner is not None,
+        "ner_model": NER_MODEL if ner is not None else None,
+        "embedder_loaded": embedder is not None,
+        "embedder_model": EMBED_MODEL if embedder is not None else None,
+    }
 
 
 def classify_email(email: dict, categories: dict) -> AssetFinding | None:

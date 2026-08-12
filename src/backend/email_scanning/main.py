@@ -6,16 +6,21 @@ remain thin and only delegate requests.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 import contextlib
 import json
 import os
 
-import google_auth_oauthlib.flow
 from google.auth.transport.requests import Request
+from google_auth_oauthlib import flow as oauth_flow
 from google.oauth2.credentials import Credentials
 from googleapiclient import discovery
 from googleapiclient.errors import HttpError
-from src.backend.email_scanning.asset_identifier import classify_emails
+
+from src.backend.email_scanning.asset_identifier import (
+    classify_emails,
+    dedupe_providers,
+)
 
 
 class EmailEvaluationError(Exception):
@@ -112,7 +117,7 @@ class EmailEvaluation:
         """Start OAuth and store PKCE + state in session."""
         self._ensure_client_secrets_file()
 
-        flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
+        flow = oauth_flow.Flow.from_client_secrets_file(
             self.client_secrets_file,
             scopes=self.scopes,
             autogenerate_code_verifier=True,
@@ -153,7 +158,7 @@ class EmailEvaluation:
 
         self._ensure_client_secrets_file()
 
-        flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
+        flow = oauth_flow.Flow.from_client_secrets_file(
             self.client_secrets_file,
             scopes=self.scopes,
             state=state,
@@ -353,7 +358,11 @@ class EmailEvaluation:
         """Fetch recent messages for view rendering without pagination details."""
         return self.fetch_inbox_messages(max_results=max_results)["messages"]
 
-    def filter_emails(self, max_results: int = 2000) -> list[dict]:
+    def filter_emails(
+        self,
+        max_results: int = 2000,
+        progress_callback: Callable[[int, str], None] | None = None,
+    ) -> list[dict]:
         """Scan the inbox and return emails classified as digital assets.
 
         Fetches messages, runs them through the local NLP asset classifier,
@@ -362,7 +371,74 @@ class EmailEvaluation:
         the confidence threshold are dropped.
         """
         effective_max_results = None if max_results <= 0 else max_results
-        messages = self.fetch_all_inbox_messages(max_results=effective_max_results)
-        findings = classify_emails(messages)
+        page_size = 500
+        findings = []
+        next_page_token: str | None = None
+        scanned_count = 0
+
+        if progress_callback is not None:
+            progress_callback(2, "Starting inbox scan...")
+            progress_callback(5, "Connecting to Gmail and preparing classifier...")
+
+        while True:
+            remaining = (
+                None
+                if effective_max_results is None
+                else effective_max_results - scanned_count
+            )
+            if remaining is not None and remaining <= 0:
+                break
+
+            page_limit = page_size if remaining is None else min(page_size, remaining)
+            page = self.fetch_inbox_messages(
+                max_results=page_limit,
+                page_token=next_page_token,
+                query=self.default_query,
+            )
+            page_messages = page.get("messages", [])
+            current_page_count = len(page_messages)
+
+            if progress_callback is not None:
+                progress_callback(
+                    max(8, min(90, 8 + (scanned_count // 50))),
+                    (
+                        "Fetched "
+                        f"{current_page_count} emails. "
+                        "Classifying current batch..."
+                    ),
+                )
+
+            scanned_count += len(page_messages)
+
+            if page_messages:
+                findings.extend(classify_emails(page_messages))
+
+            estimate = page.get("result_size_estimate", scanned_count)
+            if effective_max_results is None:
+                total_expected = max(estimate, scanned_count)
+            else:
+                total_expected = min(
+                    effective_max_results, max(estimate, scanned_count)
+                )
+
+            if progress_callback is not None:
+                progress = 95
+                if total_expected > 0:
+                    progress = int(min(95, (scanned_count / total_expected) * 95))
+                progress_callback(progress, f"Scanned {scanned_count} inbox emails...")
+
+            next_page_token = page.get("next_page_token")
+            if not next_page_token:
+                break
+
+        canonical_map = dedupe_providers([f.asset_provider for f in findings])
+        for finding in findings:
+            finding.asset_provider = canonical_map.get(
+                finding.asset_provider,
+                finding.asset_provider,
+            )
+
+        if progress_callback is not None:
+            progress_callback(100, f"Scan complete. {scanned_count} emails scanned.")
 
         return [finding.to_dict() for finding in findings]
