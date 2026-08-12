@@ -279,10 +279,12 @@ def classify_email(email: dict, categories: dict) -> AssetFinding | None:
     )
 
 
-def classify_emails(emails: list[dict], categories: dict) -> list[AssetFinding]:
+def classify_emails(
+    emails: list[dict], categories=FINANCIAL_EVENTS
+) -> list[AssetFinding]:
     """Classify a batch of emails, dropping ones below the surety threshold.
 
-    Providers are de-duplicated across the batch afterward so 'Chase' and
+    Remove duplicate providers across the batch afterward so 'Chase' and
     'Chase Bank' collapse to a single canonical provider name.
     """
     findings = [

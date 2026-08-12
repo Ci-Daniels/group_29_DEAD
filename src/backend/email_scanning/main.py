@@ -10,6 +10,7 @@ import contextlib
 import os
 
 import google_auth_oauthlib.flow
+from asset_identifier import classify_emails
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient import discovery
@@ -269,6 +270,16 @@ class EmailEvaluation:
         """Fetch recent messages for view rendering without pagination details."""
         return self.fetch_inbox_messages(max_results=max_results)["messages"]
 
-    def filter_emails():
-        """Only filter for emails that seem to be financial."""
-        pass
+    def filter_emails(self, max_results: int = 100) -> list[dict]:
+        """Scan the inbox and return emails classified as digital assets.
+
+        Fetches messages, runs them through the local NLP asset classifier,
+        and returns a list of dicts each containing asset_provider,
+        surety_percentage, category, and reasoning. Emails that don't clear
+        the confidence threshold are dropped.
+        """
+
+        messages = self.fetch_inbox_messages(max_results=max_results)["messages"]
+        findings = classify_emails(messages)
+
+        return [finding.to_dict() for finding in findings]
