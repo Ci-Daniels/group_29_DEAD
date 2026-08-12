@@ -7,14 +7,15 @@ remain thin and only delegate requests.
 from __future__ import annotations
 
 import contextlib
+import json
 import os
 
 import google_auth_oauthlib.flow
-from asset_identifier import classify_emails
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient import discovery
 from googleapiclient.errors import HttpError
+from src.backend.email_scanning.asset_identifier import classify_emails
 
 
 class EmailEvaluationError(Exception):
@@ -57,7 +58,51 @@ class EmailEvaluation:
                 ),
                 status_code=500,
             )
-        self.user_id = 00
+
+        try:
+            with open(self.client_secrets_file, encoding="utf-8") as fh:
+                payload = json.load(fh)
+        except Exception as exc:
+            raise EmailEvaluationError(
+                "Google OAuth credentials file is not valid JSON.",
+                status_code=500,
+            ) from exc
+
+        oauth_kind = (
+            "web"
+            if "web" in payload
+            else "installed"
+            if "installed" in payload
+            else None
+        )
+        if oauth_kind is None:
+            raise EmailEvaluationError(
+                "Google OAuth credentials must include a 'web' or 'installed' client.",
+                status_code=500,
+            )
+
+        oauth_config = payload.get(oauth_kind, {})
+        redirect_uris = oauth_config.get("redirect_uris") or []
+        if not redirect_uris:
+            raise EmailEvaluationError(
+                (
+                    "Google OAuth credentials are missing redirect URIs. "
+                    "Add your callback URL in Google Cloud Console and "
+                    "download the OAuth client JSON again."
+                ),
+                status_code=500,
+            )
+
+        if self.redirect_uri not in redirect_uris:
+            raise EmailEvaluationError(
+                (
+                    "Configured redirect URI is not in credentials.json. "
+                    f"Configured: {self.redirect_uri}. "
+                    "Update Google Cloud Console > OAuth client > Authorized "
+                    "redirect URIs, then download a fresh credentials file."
+                ),
+                status_code=500,
+            )
 
     def start_authorization(self, flask_session: dict) -> str:
         """Start OAuth and store PKCE + state in session."""
@@ -229,10 +274,10 @@ class EmailEvaluation:
         page_token: str | None = None,
         query: str = "-category:promotions",
     ) -> dict:
-        """Fetch inbox messages with metadata and optional pagination."""
+        """Fetch inbox messages with metadata."""
         service = self._build_service()
 
-        max_results = max(1, min(max_results, 100))
+        max_results = max(1, min(max_results, 500))
 
         request_params = {
             "userId": "me",
@@ -266,11 +311,42 @@ class EmailEvaluation:
             "result_size_estimate": response.get("resultSizeEstimate", len(messages)),
         }
 
+    def fetch_all_inbox_messages(
+        self,
+        max_results: int | None = None,
+        query: str = "-category:promotions",
+        page_size: int = 500,
+    ) -> list[dict]:
+        """Fetch multiple inbox pages until max_results or mailbox end is reached."""
+        page_size = max(1, min(page_size, 500))
+
+        all_messages: list[dict] = []
+        next_page_token: str | None = None
+
+        while True:
+            remaining = None if max_results is None else max_results - len(all_messages)
+            if remaining is not None and remaining <= 0:
+                break
+
+            page_limit = page_size if remaining is None else min(page_size, remaining)
+            page = self.fetch_inbox_messages(
+                max_results=page_limit,
+                page_token=next_page_token,
+                query=query,
+            )
+            all_messages.extend(page.get("messages", []))
+
+            next_page_token = page.get("next_page_token")
+            if not next_page_token:
+                break
+
+        return all_messages
+
     def fetch_recent_messages(self, max_results: int = 10) -> list[dict]:
         """Fetch recent messages for view rendering without pagination details."""
         return self.fetch_inbox_messages(max_results=max_results)["messages"]
 
-    def filter_emails(self, max_results: int = 100) -> list[dict]:
+    def filter_emails(self, max_results: int = 2000) -> list[dict]:
         """Scan the inbox and return emails classified as digital assets.
 
         Fetches messages, runs them through the local NLP asset classifier,
@@ -278,8 +354,8 @@ class EmailEvaluation:
         surety_percentage, category, and reasoning. Emails that don't clear
         the confidence threshold are dropped.
         """
-
-        messages = self.fetch_inbox_messages(max_results=max_results)["messages"]
+        effective_max_results = None if max_results <= 0 else max_results
+        messages = self.fetch_all_inbox_messages(max_results=effective_max_results)
         findings = classify_emails(messages)
 
         return [finding.to_dict() for finding in findings]

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Estate Access · Inbox Preview</title>
+  <title>Estate Access · Asset Findings</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
@@ -37,6 +37,17 @@
       font-size: 14px;
       line-height: 1.45;
     }
+
+    .badge {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #eef6ff;
+      color: #24508f;
+      font-size: 12px;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -55,8 +66,8 @@
 
   <main class="page">
     <header class="page__header">
-      <h1>Inbox Preview</h1>
-      <p class="page__subtitle">Showing up to the first 10 emails from your inbox.</p>
+      <h1>Digital Asset Findings</h1>
+      <p class="page__subtitle">Showing inbox emails classified as potential digital or financial assets.</p>
     </header>
 
     <section class="panel" style="display: grid; gap: 14px;">
@@ -69,21 +80,23 @@
         <p class="result-banner result-banner--error" style="display: block;">
           {{ error_message }}
         </p>
-      {% elif messages %}
+      {% elif findings %}
         <div class="email-list">
-          {% for message in messages %}
+          {% for finding in findings %}
             <article class="email-item">
-              <h2 class="email-item__subject">{{ message.subject or '(No Subject)' }}</h2>
+              <h2 class="email-item__subject">{{ finding.subject or '(No Subject)' }}</h2>
               <p class="email-item__meta">
-                From: {{ message.from or 'Unknown sender' }}<br>
-                Date: {{ message.date or 'Unknown date' }}
+                Provider: {{ finding.asset_provider or 'Unknown provider' }}<br>
+                Date: {{ finding.date or 'Unknown date' }}<br>
+                Confidence: {{ finding.surety_percentage }}%
               </p>
-              <p class="email-item__snippet">{{ message.snippet or 'No preview available.' }}</p>
+              <span class="badge">{{ finding.category }}</span>
+              <p class="email-item__snippet">{{ finding.reasoning or 'No reasoning available.' }}</p>
             </article>
           {% endfor %}
         </div>
       {% else %}
-        <p>No inbox emails were returned.</p>
+        <p>No qualifying digital-asset findings were returned.</p>
       {% endif %}
     </section>
   </main>

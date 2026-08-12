@@ -211,15 +211,15 @@ def scan_email():
 
 @app.route("/emails")
 def emails_page():
-    """Display the first 10 inbox emails after Gmail is connected."""
+    """Display classified digital-asset findings from Gmail inbox emails."""
     if not email_evaluation.credentials_available():
         return redirect(url_for("scan_email"))
 
-    messages = []
+    findings = []
     error_message = None
 
     try:
-        messages = email_evaluation.fetch_recent_messages(max_results=10)
+        findings = email_evaluation.filter_emails(max_results=2000)
     except EmailEvaluationError as exc:
         error_message = str(exc)
     except Exception as exc:
@@ -227,7 +227,7 @@ def emails_page():
 
     return render_template(
         "emails.html",
-        messages=messages,
+        findings=findings,
         error_message=error_message,
     )
 
@@ -515,6 +515,11 @@ def logout_google():
     email_evaluation.disconnect()
 
     return redirect(url_for("scan_email"))
+
+
+def scan_emails():
+    """Expose email lookup capabilities."""
+    return email_evaluation.filter_emails()
 
 
 # --------------------------------------------------------------------------

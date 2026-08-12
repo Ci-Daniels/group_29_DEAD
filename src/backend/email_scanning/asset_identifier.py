@@ -17,6 +17,7 @@ Models used (all local, CPU-friendly):
 
 from __future__ import annotations
 
+import os
 import re
 from dataclasses import dataclass, field
 from functools import lru_cache
@@ -76,12 +77,32 @@ FINANCIAL_EVENTS = {
 }
 
 
-ZERO_SHOT_MODEL = (
-    "MoritzLaurer/deberta-v3-base-zeroshot-v2"  # identify possibility of assets
-)
+ZERO_SHOT_MODELS = [
+    "MoritzLaurer/deberta-v3-base-zeroshot-v2.0",
+    "facebook/bart-large-mnli",
+]
 NER_MODEL = "dslim/bert-base-NER"  # recognize named entities i.e. providers
 EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"  # useful for deduplication
 SURETY_THRESHOLD = 55.0
+
+_CATEGORY_KEYWORDS = {
+    "account_statement": ["statement", "monthly statement", "account summary"],
+    "transaction_notification": ["transaction", "transfer", "debit", "credit"],
+    "balance_notification": ["balance", "available balance", "current balance"],
+    "portfolio_statement": ["portfolio", "holdings", "aum", "fund"],
+    "investment_confirmation": ["trade confirmation", "filled", "order executed"],
+    "dividend_payment": ["dividend", "distribution"],
+    "interest_payment": ["interest payment", "interest earned", "apy"],
+    "pension_statement": ["retirement", "401k", "pension", "ira"],
+    "insurance_statement": ["policy", "premium", "insurance"],
+    "crypto_transaction": ["wallet", "blockchain", "withdrawal", "deposit", "crypto"],
+    "crypto_statement": ["crypto statement", "exchange", "coin", "token"],
+    "account_opening": ["account opened", "welcome", "new account"],
+    "account_application": ["application", "pending approval", "verify identity"],
+    "marketing": ["offer", "promotion", "bonus", "apply now"],
+    "payment": ["receipt", "invoice", "payment received", "payment sent"],
+    "loan_statement": ["loan", "mortgage", "emi", "installment"],
+}
 
 
 @dataclass
@@ -117,17 +138,42 @@ class AssetFinding:
 
 @lru_cache(maxsize=1)
 def _get_zero_shot_pipeline():
-    return pipeline("zero-shot-classification", model=ZERO_SHOT_MODEL, device=-1)
+    local_only = os.environ.get("EMAIL_CLASSIFIER_LOCAL_ONLY", "1") == "1"
+    for model_name in ZERO_SHOT_MODELS:
+        try:
+            return pipeline(
+                "zero-shot-classification",
+                model=model_name,
+                device=-1,
+                model_kwargs={"local_files_only": local_only},
+            )
+        except Exception:
+            continue
+    return None
 
 
 @lru_cache(maxsize=1)
 def _get_ner_pipeline():
-    return pipeline("ner", model=NER_MODEL, aggregation_strategy="simple", device=-1)
+    local_only = os.environ.get("EMAIL_CLASSIFIER_LOCAL_ONLY", "1") == "1"
+    try:
+        return pipeline(
+            "ner",
+            model=NER_MODEL,
+            aggregation_strategy="simple",
+            device=-1,
+            model_kwargs={"local_files_only": local_only},
+        )
+    except Exception:
+        return None
 
 
 @lru_cache(maxsize=1)
 def _get_embedder() -> SentenceTransformer:
-    return SentenceTransformer(EMBED_MODEL)
+    local_only = os.environ.get("EMAIL_CLASSIFIER_LOCAL_ONLY", "1") == "1"
+    try:
+        return SentenceTransformer(EMBED_MODEL, local_files_only=local_only)
+    except Exception:
+        return None
 
 
 _DOMAIN_RE = re.compile(r"@([\w.-]+)")
@@ -151,12 +197,17 @@ def extract_asset_provider(email: dict) -> tuple[str, float]:
     from_header = email.get("from", "")
     subject = email.get("subject", "")
 
-    entities = _get_ner_pipeline()(f"{from_header} {subject}")
-    orgs = [e["word"] for e in entities if e.get("entity_group") == "ORG"]
-    if orgs:
-        # Prefer the longest org span found; usually the most specific name.
-        best = max(orgs, key=len)
-        return best.strip(), 0.9
+    ner_pipe = _get_ner_pipeline()
+    if ner_pipe is not None:
+        try:
+            entities = ner_pipe(f"{from_header} {subject}")
+            orgs = [e["word"] for e in entities if e.get("entity_group") == "ORG"]
+            if orgs:
+                # Prefer the longest org span found; usually the most specific name.
+                best = max(orgs, key=len)
+                return best.strip(), 0.9
+        except Exception:
+            pass
 
     domain_match = _DOMAIN_RE.search(from_header)
     if domain_match:
@@ -181,6 +232,23 @@ def dedupe_providers(
 
     unique = list(dict.fromkeys(providers))  # preserve order, dedupe exact matches
     embedder = _get_embedder()
+    if embedder is None:
+        # Fast fallback when embedding model is unavailable locally.
+        suffixes = (" bank", " inc", " llc", " ltd", " group", " holdings")
+        canonical_by_key: dict[str, str] = {}
+        mapping: dict[str, str] = {}
+        for name in unique:
+            key = re.sub(r"\s+", " ", name.strip().lower())
+            for suffix in suffixes:
+                if key.endswith(suffix):
+                    key = key[: -len(suffix)]
+            key = key.strip()
+            if not key:
+                key = name.strip().lower()
+            canonical = canonical_by_key.setdefault(key, name)
+            mapping[name] = canonical
+        return mapping
+
     embeddings = embedder.encode(unique, convert_to_tensor=True)
 
     canonical: dict[str, str] = {}
@@ -205,6 +273,29 @@ def dedupe_providers(
 # ---- category classification ----------------------------------------------
 
 
+def _classify_category_heuristic(
+    email: dict, categories: dict
+) -> tuple[str, float, dict]:
+    """Keyword-based category fallback used when HF models are unavailable."""
+    text = f"{email.get('subject', '')} {email.get('snippet', '')}".lower()
+    if not text.strip():
+        return "unknown", 0.0, {}
+
+    has_amount = bool(re.search(r"\$\s?\d|\d+\.\d{2}|usd|eur|gbp", text))
+
+    scores: dict[str, float] = {}
+    for key in categories.keys():
+        keywords = _CATEGORY_KEYWORDS.get(key, [])
+        hits = sum(1 for token in keywords if token in text)
+        base = 15.0 + (15.0 * hits)
+        if has_amount and hits > 0:
+            base += 10.0
+        scores[key] = min(base, 95.0)
+
+    top_label = max(scores, key=scores.get)
+    return top_label, round(scores[top_label], 1), scores
+
+
 def classify_category(email: dict, categories: dict) -> tuple[str, float, dict]:
     """Zero-shot match an email against the financial_events taxonomy.
 
@@ -223,17 +314,27 @@ def classify_category(email: dict, categories: dict) -> tuple[str, float, dict]:
     candidate_labels = [label_to_desc[k] for k in labels]
 
     classifier = _get_zero_shot_pipeline()
-    result = classifier(
-        text, candidate_labels=candidate_labels, hypothesis_template=hypothesis_template
-    )
+    if classifier is None:
+        return _classify_category_heuristic(email, categories)
 
-    desc_to_label = {v: k for k, v in label_to_desc.items()}
-    ranked = list(zip(result["labels"], result["scores"]))
-    top_desc, top_score = ranked[0]
-    top_label = desc_to_label[top_desc]
+    try:
+        result = classifier(
+            text,
+            candidate_labels=candidate_labels,
+            hypothesis_template=hypothesis_template,
+        )
 
-    all_scores = {desc_to_label[desc]: round(score * 100, 1) for desc, score in ranked}
-    return top_label, round(top_score * 100, 1), all_scores
+        desc_to_label = {v: k for k, v in label_to_desc.items()}
+        ranked = list(zip(result["labels"], result["scores"]))
+        top_desc, top_score = ranked[0]
+        top_label = desc_to_label[top_desc]
+
+        all_scores = {
+            desc_to_label[desc]: round(score * 100, 1) for desc, score in ranked
+        }
+        return top_label, round(top_score * 100, 1), all_scores
+    except Exception:
+        return _classify_category_heuristic(email, categories)
 
 
 def build_reasoning(
