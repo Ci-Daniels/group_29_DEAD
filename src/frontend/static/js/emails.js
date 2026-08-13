@@ -9,6 +9,7 @@ const emptyFindings = document.getElementById("empty-findings");
 
 let activePollTimer = null;
 const renderedFindingIds = new Set();
+const findingDecisions = new Map();
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -41,15 +42,23 @@ function findingUniqueId(finding, indexHint = 0) {
 }
 
 function findingCardHtml(finding) {
+  const uniqueId = findingUniqueId(finding);
   const subject = escapeHtml(finding.subject || "(No Subject)");
   const provider = escapeHtml(finding.asset_provider || "Unknown provider");
   const date = escapeHtml(finding.date || "Unknown date");
   const confidence = escapeHtml(finding.surety_percentage ?? "N/A");
   const category = escapeHtml(finding.category || "uncategorized");
   const reasoning = escapeHtml(finding.reasoning || "No reasoning available.");
+  const savedDecision = findingDecisions.get(uniqueId) || "pending";
+  const decisionText =
+    savedDecision === "confirm"
+      ? "Confirmed as asset"
+      : savedDecision === "deny"
+        ? "Marked not an asset"
+        : "Pending your review";
 
   return `
-    <article class="email-item">
+    <article class="email-item" data-finding-id="${escapeHtml(uniqueId)}">
       <h2 class="email-item__subject">${subject}</h2>
       <p class="email-item__meta">
         Provider: ${provider}<br>
@@ -58,6 +67,23 @@ function findingCardHtml(finding) {
       </p>
       <span class="badge">${category}</span>
       <p class="email-item__snippet">${reasoning}</p>
+      <div class="decision-row">
+        <button
+          class="decision-btn ${savedDecision === "confirm" ? "is-active" : ""}"
+          type="button"
+          data-decision="confirm"
+          title="Confirm as asset"
+          aria-label="Confirm as asset"
+        >✓</button>
+        <button
+          class="decision-btn ${savedDecision === "deny" ? "is-active" : ""}"
+          type="button"
+          data-decision="deny"
+          title="Mark as not an asset"
+          aria-label="Mark as not an asset"
+        >✕</button>
+        <span class="decision-state">${decisionText}</span>
+      </div>
     </article>
   `;
 }
@@ -104,6 +130,47 @@ function clearError() {
   scanError.textContent = "";
   scanError.style.display = "none";
 }
+
+function applyDecisionState(card, decision) {
+  const confirmBtn = card.querySelector('button[data-decision="confirm"]');
+  const denyBtn = card.querySelector('button[data-decision="deny"]');
+  const stateEl = card.querySelector(".decision-state");
+
+  if (!confirmBtn || !denyBtn || !stateEl) {
+    return;
+  }
+
+  confirmBtn.classList.toggle("is-active", decision === "confirm");
+  denyBtn.classList.toggle("is-active", decision === "deny");
+
+  if (decision === "confirm") {
+    stateEl.textContent = "Confirmed as asset";
+  } else if (decision === "deny") {
+    stateEl.textContent = "Marked not an asset";
+  } else {
+    stateEl.textContent = "Pending your review";
+  }
+}
+
+findingsContainer.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-decision]");
+  if (!button) {
+    return;
+  }
+
+  const card = button.closest("[data-finding-id]");
+  if (!card) {
+    return;
+  }
+
+  const decision = button.dataset.decision;
+  const findingId = card.dataset.findingId;
+  const current = findingDecisions.get(findingId) || "pending";
+  const nextDecision = current === decision ? "pending" : decision;
+
+  findingDecisions.set(findingId, nextDecision);
+  applyDecisionState(card, nextDecision);
+});
 
 async function pollScanStatus(sessionId) {
   if (activePollTimer) {

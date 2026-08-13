@@ -79,6 +79,58 @@
     .result-banner {
       display: none;
     }
+
+    .decision-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .decision-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      border: 1px solid var(--color-border);
+      background: #fff;
+      color: var(--color-text);
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .decision-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .decision-btn[data-decision="confirm"] {
+      color: #0f7a53;
+      border-color: #7bc6aa;
+    }
+
+    .decision-btn[data-decision="deny"] {
+      color: #a23a3a;
+      border-color: #d4a0a0;
+    }
+
+    .decision-btn.is-active {
+      background: #eaf8f1;
+      border-color: #0f7a53;
+      box-shadow: 0 0 0 2px rgba(15, 122, 83, 0.15);
+    }
+
+    .decision-btn[data-decision="deny"].is-active {
+      background: #fff0f0;
+      border-color: #a23a3a;
+      box-shadow: 0 0 0 2px rgba(162, 58, 58, 0.15);
+    }
+
+    .decision-state {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-text-muted);
+    }
   </style>
 </head>
 <body>
