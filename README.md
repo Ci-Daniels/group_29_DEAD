@@ -123,7 +123,7 @@ The storage location for enrolled biometric data. Each beneficiary has their own
 
 ## Technology Stack
 
-- Python 3.11
+- Python 3.12+
 - OpenCV, for camera access and image handling
 - InsightFace (SCRFD for detection, ArcFace for recognition), for the core face recognition models
 - ONNX Runtime, the inference engine InsightFace's models run on

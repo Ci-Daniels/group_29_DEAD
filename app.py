@@ -36,6 +36,9 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient import discovery
 from googleapiclient.errors import HttpError
+from werkzeug.security import check_password_hash, generate_password_hash
+
+from src.backend.database_model.models import User, db
 from src.backend.facial_recognition.config import EMBEDDINGS_DIR
 from src.backend.facial_recognition.modules.enrollment import FaceEnrollment
 from src.backend.facial_recognition.modules.exceptions import (
@@ -893,3 +896,91 @@ def logout_google():
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=True, threaded=True)
+
+
+#----------------------------------------------------------------------------
+# Login and signup
+#----------------------------------------------------------------------------
+
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+    "DATABASE_URL",
+    "sqlite:///app.db",
+)
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+db.init_app(app)
+
+with app.app_context():
+    db.create_all()
+
+
+@app.route("/api/signup", methods=["POST"])
+def api_signup():
+    print(">>> API SIGNUP ROUTE WAS CALLED")
+    data = request.get_json(silent=True) or {}
+
+    full_name = (data.get("full_name") or "").strip()
+    country = (data.get("country") or "").strip()
+    national_id = (data.get("national_id") or "").strip()
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("password") or ""
+
+    if not all([full_name, country, national_id, email, password]):
+        return jsonify({"error": "full_name, country, national_id, email, and password are required."}), 400
+
+    if User.query.filter_by(email=email).first():
+        return jsonify({"error": "User already exists."}), 400
+
+    user = User(
+        full_name=full_name,
+        country=country,
+        national_id=national_id,
+        email=email,
+        password_hash=generate_password_hash(password),
+        consent_status=True,
+    )
+
+    db.session.add(user)
+    db.session.commit()
+
+    return jsonify({
+        "message": "User created successfully.",
+        "user": {
+            "id": user.id,
+            "full_name": user.full_name,
+            "country": user.country,
+            "national_id": user.national_id,
+            "email": user.email,
+        },
+    }), 201
+
+
+@app.route("/api/login", methods=["POST"])
+def api_login():
+    data = request.get_json(silent=True) or {}
+
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("password") or ""
+
+    if not email or not password:
+        return jsonify({"error": "email and password are required."}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user or not check_password_hash(user.password_hash, password):
+        return jsonify({"error": "Invalid email or password."}), 401
+
+    session.clear()
+    session["logged_in"] = True
+    session["user_id"] = user.id
+    session["user_email"] = user.email
+
+    return jsonify({
+        "message": "Login successful.",
+        "user": {
+            "id": user.id,
+            "full_name": user.full_name,
+            "country": user.country,
+            "national_id": user.national_id,
+            "email": user.email,
+        },
+    }), 200
