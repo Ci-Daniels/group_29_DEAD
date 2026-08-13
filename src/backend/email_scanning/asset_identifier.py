@@ -41,17 +41,21 @@ FINANCIAL_EVENTS = {
         "financial account balance."
     },
     "portfolio_statement": {
-        "description": "A statement showing investments, securities, "
+        "description": "A statement showing investments, securities belonging to the registered email user. "
         "fund holdings or portfolio value."
     },
     "investment_confirmation": {
-        "description": "Confirmation that an investment was purchased, "
+        "description": "Confirmation that an investment was purchased by the given email user. "
         "sold or allocated."
     },
-    "dividend_payment": {"description": "Notification of dividends or distributions."},
-    "interest_payment": {"description": "Notification of interest earned or paid."},
+    "dividend_payment": {
+        "description": "Notification of dividends or distributions paid to the email user."
+    },
+    "interest_payment": {
+        "description": "Notification of interest earned or paid to the email user."
+    },
     "pension_statement": {
-        "description": "Statement showing pension or retirement savings."
+        "description": "Statement showing pension or retirement savings paid or owed to the email user."
     },
     "insurance_statement": {
         "description": "Statement or notification relating to an "
@@ -70,12 +74,10 @@ FINANCIAL_EVENTS = {
         "description": "An application or request to open a financial "
         "account that may not yet exist."
     },
-    "marketing": {
-        "description": "Promotional content encouraging the recipient "
-        "to use or purchase a financial service."
-    },
     "payment": {"description": "Confirmation of a payment for goods or services."},
-    "loan_statement": {"description": "Statement concerning borrowed money or a loan."},
+    "loan_statement": {
+        "description": "Statement concerning borrowed money or a loan by a given user."
+    },
 }
 
 
@@ -86,6 +88,7 @@ ZERO_SHOT_MODELS = [
 NER_MODEL = "dslim/bert-base-NER"  # recognize named entities i.e. providers
 EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"  # useful for deduplication
 SURETY_THRESHOLD = 55.0
+OWNERSHIP_THRESHOLD = float(os.environ.get("ASSET_OWNERSHIP_THRESHOLD", "60.0"))
 
 _MODEL_LOAD_ERRORS: dict[str, str] = {}
 
@@ -106,6 +109,31 @@ _CATEGORY_KEYWORDS = {
     "marketing": ["offer", "promotion", "bonus", "apply now"],
     "payment": ["receipt", "invoice", "payment received", "payment sent"],
     "loan_statement": ["loan", "mortgage", "emi", "installment"],
+}
+
+_OWNERSHIP_POSITIVE_CUES = {
+    "your account",
+    "your balance",
+    "statement period",
+    "transaction id",
+    "account ending",
+    "available balance",
+    "portfolio value",
+    "policy number",
+    "dividend paid",
+    "interest credited",
+}
+
+_OWNERSHIP_NEGATIVE_CUES = {
+    "learn more",
+    "subscribe",
+    "unsubscribe",
+    "sponsored",
+    "offer",
+    "promotion",
+    "apply now",
+    "limited time",
+    "ad",
 }
 
 
@@ -386,6 +414,79 @@ def _classify_category_heuristic(
     return top_label, round(scores[top_label], 1), scores
 
 
+def _classify_ownership_heuristic(email: dict) -> tuple[bool, float, str]:
+    """Heuristic ownership gate fallback when zero-shot is unavailable."""
+    text = f"{email.get('subject', '')} {email.get('snippet', '')}".lower()
+    if not text.strip():
+        return False, 0.0, "Email has no usable content."
+
+    positive_hits = sum(1 for cue in _OWNERSHIP_POSITIVE_CUES if cue in text)
+    negative_hits = sum(1 for cue in _OWNERSHIP_NEGATIVE_CUES if cue in text)
+
+    ownership_score = 45.0 + (12.0 * positive_hits) - (14.0 * negative_hits)
+    ownership_score = max(0.0, min(95.0, ownership_score))
+
+    if ownership_score >= OWNERSHIP_THRESHOLD:
+        return True, round(ownership_score, 1), "Ownership cues found in email content."
+
+    return (
+        False,
+        round(ownership_score, 1),
+        "Insufficient ownership evidence or promotional language detected.",
+    )
+
+
+def classify_ownership_gate(email: dict) -> tuple[bool, float, str]:
+    """Stage 1 gate: determine if email is about recipient's real owned assets."""
+    text = f"{email.get('subject', '')}. {email.get('snippet', '')}".strip()
+    if not text:
+        return False, 0.0, "Email has no usable content."
+
+    classifier = _get_zero_shot_pipeline()
+    if classifier is None:
+        return _classify_ownership_heuristic(email)
+
+    candidate_labels = [
+        (
+            "A direct record or update about the recipient's own current financial "
+            "account, balance, holding, transaction, payout, or policy"
+        ),
+        (
+            "General marketing, informational content, or non-personal financial "
+            "content not proving the recipient currently owns the asset"
+        ),
+    ]
+
+    try:
+        result = classifier(
+            text,
+            candidate_labels=candidate_labels,
+            hypothesis_template="This email is {}.",
+        )
+        ranked = list(zip(result["labels"], result["scores"]))
+        top_label, top_score = ranked[0]
+        ownership_score = round(top_score * 100, 1)
+
+        is_owned_asset = (
+            top_label == candidate_labels[0] and ownership_score >= OWNERSHIP_THRESHOLD
+        )
+
+        if is_owned_asset:
+            return (
+                True,
+                ownership_score,
+                "Ownership gate passed for recipient asset signal.",
+            )
+
+        return (
+            False,
+            ownership_score,
+            "Ownership gate failed; email appears promotional or non-personal.",
+        )
+    except Exception:
+        return _classify_ownership_heuristic(email)
+
+
 def classify_category(email: dict, categories: dict) -> tuple[str, float, dict]:
     """Zero-shot match an email against the financial_events taxonomy.
 
@@ -503,13 +604,20 @@ def classify_email(email: dict, categories: dict) -> AssetFinding | None:
     Returns None if the email doesn't clear the surety threshold, i.e. it's
     judged unlikely to represent a real digital/financial asset.
     """
+    is_owned_asset, ownership_surety, ownership_reason = classify_ownership_gate(email)
+    if not is_owned_asset:
+        return None
+
     category, surety, all_scores = classify_category(email, categories)
     if surety < SURETY_THRESHOLD:
         return None
 
     provider, provider_conf = extract_asset_provider(email)
-    reasoning = build_reasoning(
-        email, category, categories[category]["description"], surety, provider
+    reasoning = (
+        f"{ownership_reason} (ownership confidence {ownership_surety:.1f}%). "
+        + build_reasoning(
+            email, category, categories[category]["description"], surety, provider
+        )
     )
 
     return AssetFinding(
