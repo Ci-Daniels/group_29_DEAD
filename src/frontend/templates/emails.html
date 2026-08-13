@@ -48,6 +48,37 @@
       font-size: 12px;
       font-weight: 600;
     }
+
+    .progress-wrap {
+      display: none;
+      gap: 8px;
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: #e6edf7;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #1f9d8f 0%, #24508f 100%);
+      transition: width 0.25s ease;
+    }
+
+    .result-banner {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -72,33 +103,27 @@
 
     <section class="panel" style="display: grid; gap: 14px;">
       <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <a href="{{ url_for('emails_page') }}" class="btn btn--primary">Refresh</a>
+        <button id="scan-trigger" class="btn btn--primary" type="button">Scan Inbox</button>
         <a href="{{ url_for('scan_email') }}" class="btn btn--ghost">Back</a>
       </div>
 
-      {% if error_message %}
-        <p class="result-banner result-banner--error" style="display: block;">
-          {{ error_message }}
-        </p>
-      {% elif findings %}
-        <div class="email-list">
-          {% for finding in findings %}
-            <article class="email-item">
-              <h2 class="email-item__subject">{{ finding.subject or '(No Subject)' }}</h2>
-              <p class="email-item__meta">
-                Provider: {{ finding.asset_provider or 'Unknown provider' }}<br>
-                Date: {{ finding.date or 'Unknown date' }}<br>
-                Confidence: {{ finding.surety_percentage }}%
-              </p>
-              <span class="badge">{{ finding.category }}</span>
-              <p class="email-item__snippet">{{ finding.reasoning or 'No reasoning available.' }}</p>
-            </article>
-          {% endfor %}
+      <div id="scan-progress" class="progress-wrap">
+        <div class="progress-meta">
+          <span id="scan-status">Starting scan...</span>
+          <span id="scan-percent">0%</span>
         </div>
-      {% else %}
-        <p>No qualifying digital-asset findings were returned.</p>
-      {% endif %}
+        <div class="progress-track">
+          <div id="scan-fill" class="progress-fill"></div>
+        </div>
+      </div>
+
+      <p id="scan-error" class="result-banner result-banner--error"></p>
+
+      <div id="findings-container" class="email-list"></div>
+      <p id="empty-findings" style="display: none;">No qualifying digital-asset findings were returned.</p>
     </section>
   </main>
+
+  <script src="{{ url_for('static', filename='js/emails.js') }}"></script>
 </body>
 </html>

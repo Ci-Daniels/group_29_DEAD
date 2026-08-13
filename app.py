@@ -196,6 +196,7 @@ def _new_email_scan_session(max_results: int) -> str:
             "progress": 1,
             "status": "Queued for scanning...",
             "max_results": max_results,
+            "partial_findings": [],
         }
 
     return session_id
@@ -209,25 +210,38 @@ def _run_email_scan(session_id: str) -> None:
         return
 
     def _on_progress(progress: int, status: str) -> None:
-        session_data["progress"] = max(0, min(progress, 100))
-        session_data["status"] = status
+        with _sessions_lock:
+            session_data["progress"] = max(0, min(progress, 100))
+            session_data["status"] = status
+
+    def _on_findings(chunk_findings: list[dict], _scanned_count: int) -> None:
+        if not chunk_findings:
+            return
+        with _sessions_lock:
+            session_data["partial_findings"].extend(chunk_findings)
 
     try:
         _on_progress(3, "Initializing scan worker...")
         findings = email_evaluation.filter_emails(
             max_results=session_data.get("max_results", 0),
             progress_callback=_on_progress,
+            findings_callback=_on_findings,
         )
-        session_data["result"] = {
-            "findings": findings,
-            "count": len(findings),
-        }
+        with _sessions_lock:
+            session_data["result"] = {
+                "findings": findings,
+                "count": len(findings),
+            }
+            session_data["partial_findings"] = findings
     except EmailEvaluationError as exc:
-        session_data["error"] = str(exc)
+        with _sessions_lock:
+            session_data["error"] = str(exc)
     except Exception as exc:
-        session_data["error"] = f"Unexpected Gmail error: {exc}"
+        with _sessions_lock:
+            session_data["error"] = f"Unexpected Gmail error: {exc}"
     finally:
-        session_data["done"] = True
+        with _sessions_lock:
+            session_data["done"] = True
 
 
 # --------------------------------------------------------------------------
@@ -579,6 +593,7 @@ def api_email_scan_status(session_id: str):
             "error": session_data["error"],
             "progress": session_data.get("progress", 0),
             "status": session_data.get("status", ""),
+            "partial_findings": session_data.get("partial_findings", []),
             "result": session_data["result"],
         }
     )

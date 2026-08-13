@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import os
 import re
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
@@ -86,6 +87,8 @@ NER_MODEL = "dslim/bert-base-NER"  # recognize named entities i.e. providers
 EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"  # useful for deduplication
 SURETY_THRESHOLD = 55.0
 
+_MODEL_LOAD_ERRORS: dict[str, str] = {}
+
 _CATEGORY_KEYWORDS = {
     "account_statement": ["statement", "monthly statement", "account summary"],
     "transaction_notification": ["transaction", "transfer", "debit", "credit"],
@@ -150,6 +153,26 @@ def _hf_token() -> str | None:
     )
 
 
+@contextmanager
+def _hf_offline_mode(enabled: bool):
+    """Temporarily force offline loading for Hugging Face libraries."""
+    keys = ("HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE")
+    previous = {key: os.environ.get(key) for key in keys}
+
+    if enabled:
+        for key in keys:
+            os.environ[key] = "1"
+
+    try:
+        yield
+    finally:
+        for key, value in previous.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+
+
 @dataclass
 class AssetFinding:
     """Structured result of classifying one email."""
@@ -185,17 +208,24 @@ class AssetFinding:
 def _get_zero_shot_pipeline():
     local_only = os.environ.get("EMAIL_CLASSIFIER_LOCAL_ONLY", "1") == "1"
     token = _hf_token()
+    last_error: Exception | None = None
     for model_name in ZERO_SHOT_MODELS:
         try:
-            return pipeline(
-                "zero-shot-classification",
-                model=model_name,
-                device=-1,
-                token=token,
-                model_kwargs={"local_files_only": local_only},
-            )
-        except Exception:
+            with _hf_offline_mode(local_only):
+                result = pipeline(
+                    "zero-shot-classification",
+                    model=model_name,
+                    device=-1,
+                    token=token,
+                )
+            _MODEL_LOAD_ERRORS.pop("zero_shot", None)
+            return result
+        except Exception as exc:
+            last_error = exc
             continue
+
+    if last_error is not None:
+        _MODEL_LOAD_ERRORS["zero_shot"] = str(last_error)
     return None
 
 
@@ -204,15 +234,18 @@ def _get_ner_pipeline():
     local_only = os.environ.get("EMAIL_CLASSIFIER_LOCAL_ONLY", "1") == "1"
     token = _hf_token()
     try:
-        return pipeline(
-            "ner",
-            model=NER_MODEL,
-            aggregation_strategy="simple",
-            device=-1,
-            token=token,
-            model_kwargs={"local_files_only": local_only},
-        )
-    except Exception:
+        with _hf_offline_mode(local_only):
+            result = pipeline(
+                "ner",
+                model=NER_MODEL,
+                aggregation_strategy="simple",
+                device=-1,
+                token=token,
+            )
+        _MODEL_LOAD_ERRORS.pop("ner", None)
+        return result
+    except Exception as exc:
+        _MODEL_LOAD_ERRORS["ner"] = str(exc)
         return None
 
 
@@ -221,12 +254,15 @@ def _get_embedder() -> SentenceTransformer:
     local_only = os.environ.get("EMAIL_CLASSIFIER_LOCAL_ONLY", "1") == "1"
     token = _hf_token()
     try:
-        return SentenceTransformer(
-            EMBED_MODEL,
-            local_files_only=local_only,
-            token=token,
-        )
-    except Exception:
+        with _hf_offline_mode(local_only):
+            result = SentenceTransformer(
+                EMBED_MODEL,
+                token=token,
+            )
+        _MODEL_LOAD_ERRORS.pop("embedder", None)
+        return result
+    except Exception as exc:
+        _MODEL_LOAD_ERRORS["embedder"] = str(exc)
         return None
 
 
@@ -421,6 +457,7 @@ def preload_models(force_download: bool = False) -> dict:
     _get_zero_shot_pipeline.cache_clear()
     _get_ner_pipeline.cache_clear()
     _get_embedder.cache_clear()
+    _MODEL_LOAD_ERRORS.clear()
 
     token = _hf_token()
     if token:
@@ -456,6 +493,7 @@ def preload_models(force_download: bool = False) -> dict:
         "ner_model": NER_MODEL if ner is not None else None,
         "embedder_loaded": embedder is not None,
         "embedder_model": EMBED_MODEL if embedder is not None else None,
+        "model_errors": dict(_MODEL_LOAD_ERRORS),
     }
 
 

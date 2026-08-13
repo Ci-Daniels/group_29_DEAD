@@ -16,6 +16,7 @@ from src.backend.email_scanning.asset_identifier import preload_models
 
 
 def main() -> int:
+    """Run model preload and print readiness diagnostics."""
     parser = argparse.ArgumentParser(description="Preload email scanning models")
     parser.add_argument(
         "--download",
@@ -36,6 +37,12 @@ def main() -> int:
     if required_loaded:
         print("Email models are ready for local scanning.")
         return 0
+
+    errors = status.get("model_errors") or {}
+    if errors:
+        print("\nModel load failures:")
+        for model_key, message in errors.items():
+            print(f"- {model_key}: {message}")
 
     print("Some models are missing. Re-run with --download to fetch and cache.")
     return 1

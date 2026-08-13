@@ -6,17 +6,19 @@ remain thin and only delegate requests.
 
 from __future__ import annotations
 
-from collections.abc import Callable
 import contextlib
 import json
 import os
+import socket
+import ssl
+import time
+from collections.abc import Callable
 
 from google.auth.transport.requests import Request
-from google_auth_oauthlib import flow as oauth_flow
 from google.oauth2.credentials import Credentials
+from google_auth_oauthlib import flow as oauth_flow
 from googleapiclient import discovery
 from googleapiclient.errors import HttpError
-
 from src.backend.email_scanning.asset_identifier import (
     classify_emails,
     dedupe_providers,
@@ -52,11 +54,17 @@ class EmailEvaluation:
         )
         self.default_query = os.environ.get(
             "GMAIL_DEFAULT_QUERY",
-            "-category:promotions -label:^smartlabel_promo",
+            "-category:promotions -label:^smartlabel_promo "
+            "-category:forums -label:^smartlabel_group",
         )
 
         if self.redirect_uri.startswith(("http://127.0.0.1", "http://localhost")):
             os.environ.setdefault("OAUTHLIB_INSECURE_TRANSPORT", "1")
+
+        self.gmail_api_max_retries = int(os.environ.get("GMAIL_API_MAX_RETRIES", "4"))
+        self.gmail_api_backoff_seconds = float(
+            os.environ.get("GMAIL_API_BACKOFF_SECONDS", "1.0")
+        )
 
     def _ensure_client_secrets_file(self) -> None:
         if not os.path.exists(self.client_secrets_file):
@@ -243,6 +251,54 @@ class EmailEvaluation:
             cache_discovery=False,
         )
 
+    def _is_retryable_http_error(self, exc: HttpError) -> bool:
+        status = getattr(getattr(exc, "resp", None), "status", None)
+        return status in {408, 429, 500, 502, 503, 504}
+
+    def _is_retryable_network_error(self, exc: Exception) -> bool:
+        if isinstance(
+            exc, (TimeoutError, socket.timeout, ssl.SSLError, ConnectionError)
+        ):
+            return True
+        message = str(exc).lower()
+        return "timed out" in message or "handshake" in message
+
+    def _execute_with_retries(self, request, operation_name: str) -> dict:
+        max_attempts = max(1, self.gmail_api_max_retries)
+        last_exc: Exception | None = None
+
+        for attempt in range(1, max_attempts + 1):
+            try:
+                return request.execute()
+            except HttpError as exc:
+                last_exc = exc
+                if not self._is_retryable_http_error(exc) or attempt == max_attempts:
+                    raise EmailEvaluationError(
+                        f"Gmail API request failed during {operation_name}: {exc}",
+                        status_code=502,
+                    ) from exc
+            except Exception as exc:
+                last_exc = exc
+                if not self._is_retryable_network_error(exc) or attempt == max_attempts:
+                    raise EmailEvaluationError(
+                        (
+                            "Gmail network request timed out during "
+                            f"{operation_name}. Please retry in a few seconds. "
+                            f"Details: {exc}"
+                        ),
+                        status_code=504,
+                    ) from exc
+
+            time.sleep(self.gmail_api_backoff_seconds * (2 ** (attempt - 1)))
+
+        raise EmailEvaluationError(
+            (
+                "Gmail request failed after retries during "
+                f"{operation_name}. Last error: {last_exc}"
+            ),
+            status_code=504,
+        )
+
     def _get_header(self, message: dict, header_name: str) -> str:
         payload = message.get("payload", {})
         headers = payload.get("headers", [])
@@ -254,7 +310,7 @@ class EmailEvaluation:
         return ""
 
     def _get_message_metadata(self, service, message_id: str) -> dict:
-        message = (
+        request = (
             service.users()
             .messages()
             .get(
@@ -263,7 +319,10 @@ class EmailEvaluation:
                 format="metadata",
                 metadataHeaders=["From", "To", "Subject", "Date"],
             )
-            .execute()
+        )
+        message = self._execute_with_retries(
+            request,
+            operation_name=f"message metadata fetch ({message_id})",
         )
 
         return {
@@ -299,19 +358,21 @@ class EmailEvaluation:
             request_params["pageToken"] = page_token
 
         try:
-            response = service.users().messages().list(**request_params).execute()
-        except HttpError as exc:
-            raise EmailEvaluationError(
-                f"Gmail API request failed: {exc}",
-                status_code=502,
-            ) from exc
+            request = service.users().messages().list(**request_params)
+            response = self._execute_with_retries(
+                request,
+                operation_name="inbox list fetch",
+            )
+        except EmailEvaluationError:
+            raise
 
         messages = []
 
         for message_ref in response.get("messages", []):
             try:
                 message = self._get_message_metadata(service, message_ref["id"])
-                if "CATEGORY_PROMOTIONS" in message.get("label_ids", []):
+                label_ids = message.get("label_ids", [])
+                if "CATEGORY_PROMOTIONS" in label_ids or "CATEGORY_FORUMS" in label_ids:
                     continue
                 messages.append(message)
             except HttpError:
@@ -362,6 +423,7 @@ class EmailEvaluation:
         self,
         max_results: int = 2000,
         progress_callback: Callable[[int, str], None] | None = None,
+        findings_callback: Callable[[list[dict], int], None] | None = None,
     ) -> list[dict]:
         """Scan the inbox and return emails classified as digital assets.
 
@@ -371,7 +433,12 @@ class EmailEvaluation:
         the confidence threshold are dropped.
         """
         effective_max_results = None if max_results <= 0 else max_results
-        page_size = 500
+        page_size = int(os.environ.get("EMAIL_SCAN_PAGE_SIZE", "100"))
+        page_size = max(10, min(page_size, 500))
+        classification_chunk_size = int(
+            os.environ.get("EMAIL_CLASSIFICATION_CHUNK_SIZE", "25")
+        )
+        classification_chunk_size = max(5, min(classification_chunk_size, page_size))
         findings = []
         next_page_token: str | None = None
         scanned_count = 0
@@ -411,7 +478,30 @@ class EmailEvaluation:
             scanned_count += len(page_messages)
 
             if page_messages:
-                findings.extend(classify_emails(page_messages))
+                for chunk_start in range(
+                    0, current_page_count, classification_chunk_size
+                ):
+                    chunk_end = min(
+                        chunk_start + classification_chunk_size, current_page_count
+                    )
+                    chunk = page_messages[chunk_start:chunk_end]
+                    chunk_findings = classify_emails(chunk)
+                    findings.extend(chunk_findings)
+
+                    if findings_callback is not None and chunk_findings:
+                        findings_callback(
+                            [finding.to_dict() for finding in chunk_findings],
+                            scanned_count,
+                        )
+
+                    if progress_callback is not None:
+                        progress_callback(
+                            max(10, min(92, 10 + (scanned_count // 50))),
+                            (
+                                f"Classifying current batch: {chunk_end}/"
+                                f"{current_page_count} emails"
+                            ),
+                        )
 
             estimate = page.get("result_size_estimate", scanned_count)
             if effective_max_results is None:
