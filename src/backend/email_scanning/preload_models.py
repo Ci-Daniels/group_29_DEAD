@@ -11,12 +11,36 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+from pathlib import Path
 
-from src.backend.email_scanning.asset_identifier import preload_models
+
+def _configure_repo_local_model_cache() -> Path:
+    """Point Hugging Face/SentenceTransformer caches into this repository."""
+    repo_root = Path(__file__).resolve().parents[3]
+    models_root = repo_root / "src" / "backend" / "email_scanning" / "assets" / "models"
+    hf_home = models_root / "hf_home"
+    st_home = models_root / "sentence_transformers"
+    torch_home = models_root / "torch"
+
+    for directory in (models_root, hf_home, st_home, torch_home):
+        directory.mkdir(parents=True, exist_ok=True)
+
+    os.environ.setdefault("HF_HOME", str(hf_home))
+    os.environ.setdefault("HUGGINGFACE_HUB_CACHE", str(hf_home / "hub"))
+    os.environ.setdefault("TRANSFORMERS_CACHE", str(hf_home / "hub"))
+    os.environ.setdefault("SENTENCE_TRANSFORMERS_HOME", str(st_home))
+    os.environ.setdefault("TORCH_HOME", str(torch_home))
+
+    return models_root
 
 
 def main() -> int:
     """Run model preload and print readiness diagnostics."""
+    models_root = _configure_repo_local_model_cache()
+
+    from src.backend.email_scanning.asset_identifier import preload_models
+
     parser = argparse.ArgumentParser(description="Preload email scanning models")
     parser.add_argument(
         "--download",
@@ -25,6 +49,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    print(f"Model cache directory: {models_root}")
     status = preload_models(force_download=args.download)
     print(json.dumps(status, indent=2))
 
