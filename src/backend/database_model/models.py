@@ -23,6 +23,7 @@ class User(db.Model):
     gmail_oauth_token = db.Column(db.Text, nullable=True)  # we will encrypt this in prod
 
     is_deceased = db.Column(db.Boolean, default=False)
+    role = db.Column(db.String(20), default="user")  # admin | user
     created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     # deleting a primary holder cleans up everything related to it

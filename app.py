@@ -18,8 +18,13 @@ import os
 import threading
 import time
 import uuid
+from functools import wraps
 from pathlib import Path
 from typing import Dict, Optional
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 import google_auth_oauthlib.flow
 from flask import (
@@ -38,7 +43,7 @@ from googleapiclient import discovery
 from googleapiclient.errors import HttpError
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from src.backend.database_model.models import User, db
+from src.backend.database_model.models import User, AuditLog, db
 from src.backend.facial_recognition.config import EMBEDDINGS_DIR
 from src.backend.facial_recognition.modules.enrollment import FaceEnrollment
 from src.backend.facial_recognition.modules.exceptions import (
@@ -904,7 +909,7 @@ if __name__ == "__main__":
 
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
     "DATABASE_URL",
-    "sqlite:///app.db",
+    "postgresql://postgres:postgres@localhost:5432/group_29_db",
 )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
@@ -916,7 +921,7 @@ with app.app_context():
 
 @app.route("/api/signup", methods=["POST"])
 def api_signup():
-    print(">>> API SIGNUP ROUTE WAS CALLED")
+    print(">>> API SIGNUP ROUTE WAS CALLED SAFELY")
     data = request.get_json(silent=True) or {}
 
     full_name = (data.get("full_name") or "").strip()
@@ -938,6 +943,7 @@ def api_signup():
         email=email,
         password_hash=generate_password_hash(password),
         consent_status=True,
+        role="user",
     )
 
     db.session.add(user)
@@ -951,6 +957,7 @@ def api_signup():
             "country": user.country,
             "national_id": user.national_id,
             "email": user.email,
+            "role": user.role,
         },
     }), 201
 
@@ -973,6 +980,7 @@ def api_login():
     session["logged_in"] = True
     session["user_id"] = user.id
     session["user_email"] = user.email
+    session["user_role"] = user.role
 
     return jsonify({
         "message": "Login successful.",
@@ -982,5 +990,6 @@ def api_login():
             "country": user.country,
             "national_id": user.national_id,
             "email": user.email,
+            "role": user.role,
         },
     }), 200
