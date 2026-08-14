@@ -162,4 +162,52 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // --- Add Assets (beneficiaries.html) ---
+  var addAssetBtn = document.getElementById('add-asset-btn');
+  if (addAssetBtn) {
+    addAssetBtn.addEventListener('click', function () {
+      var input = document.getElementById('asset-input');
+      var list = document.getElementById('asset-list');
+      var empty = document.getElementById('asset-empty');
+      var countBadge = document.getElementById('asset-count-badge');
+      if (!input || !list) return;
+      var name = input.value.trim();
+      if (!name) return;
+
+      var div = document.createElement('div');
+      div.className = 'list-item';
+      div.innerHTML =
+        '<div>' +
+          '<p class="list-item__title">' + name + '</p>' +
+          '<p class="list-item__subtitle">Digital asset</p>' +
+        '</div>' +
+        '<button class="btn btn-ghost btn-sm asset-remove-btn" style="color:var(--danger);">Remove</button>';
+      list.prepend(div);
+
+      input.value = '';
+
+      // Update count + toggle empty state
+      updateAssetListState(list, empty, countBadge);
+    });
+  }
+
+  // Remove asset (event delegation)
+  document.addEventListener('click', function (e) {
+    if (e.target && e.target.classList.contains('asset-remove-btn')) {
+      var item = e.target.closest('.list-item');
+      item.remove();
+      var list = document.getElementById('asset-list');
+      var empty = document.getElementById('asset-empty');
+      var countBadge = document.getElementById('asset-count-badge');
+      updateAssetListState(list, empty, countBadge);
+    }
+  });
+
+  function updateAssetListState(list, empty, countBadge) {
+    if (!list) return;
+    var count = list.querySelectorAll('.list-item').length;
+    if (countBadge) countBadge.textContent = count + ' asset' + (count !== 1 ? 's' : '');
+    if (empty) empty.hidden = count > 0;
+  }
+
 });

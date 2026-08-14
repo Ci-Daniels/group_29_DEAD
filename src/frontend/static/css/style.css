@@ -1068,6 +1068,20 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   font-weight: 600;
 }
 
+.step-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
 /* ---------- Modal ---------- */
 .modal-overlay {
   position: fixed;

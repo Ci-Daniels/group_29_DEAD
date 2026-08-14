@@ -1,24 +1,79 @@
 {% extends "base.html" %}
 {% set logged_in = true %}
-{% block title %}Next of Kin{% endblock %}
+{% block title %}Asset Allocation{% endblock %}
 
 {% block nav_extra %}
 <a href="{{ url_for('dashboard_page') }}" class="nav-link">Dashboard</a>
-<a href="{{ url_for('beneficiaries_page') }}" class="nav-link active">Next of Kin</a>
+<a href="{{ url_for('beneficiaries_page') }}" class="nav-link active">Asset Allocation</a>
 <a href="{{ url_for('verify_page') }}" class="nav-link">Verification</a>
 {% endblock %}
 
 {% block content %}
 
 <div class="page-header">
-  <h1>Next of Kin &amp; Failsafe</h1>
-  <p>Designate beneficiaries and configure fallback options if none accept.</p>
+  <h1>Asset Allocation</h1>
+  <p>Add your assets first, then designate next of kin and configure fail-safe options.</p>
+</div>
+
+<!-- Step 1: Add Assets -->
+<div class="card" style="margin-bottom:24px;">
+  <div class="section-header">
+    <div class="flex items-center gap-md">
+      <span class="step-badge">1</span>
+      <div>
+        <h2 class="section-header__title" style="margin:0;">Add Assets</h2>
+        <p style="font-size:13px;color:var(--text-muted);margin:2px 0 0;">Declare the digital assets to be allocated.</p>
+      </div>
+    </div>
+    <span class="badge badge--info" id="asset-count-badge">3 assets</span>
+  </div>
+
+  <div class="flex gap-md" style="margin-bottom:16px;">
+    <input type="text" class="form-control" id="asset-input" placeholder="e.g. Instagram account, M-Pesa wallet, BPR Savings..." style="flex:1;">
+    <button class="btn btn-primary" id="add-asset-btn">+ Add assets</button>
+  </div>
+
+  <div id="asset-list">
+    <div class="list-item">
+      <div>
+        <p class="list-item__title">Instagram (monetized)</p>
+        <p class="list-item__subtitle">Social media account</p>
+      </div>
+      <button class="btn btn-ghost btn-sm asset-remove-btn" style="color:var(--danger);">Remove</button>
+    </div>
+    <div class="list-item">
+      <div>
+        <p class="list-item__title">M-Pesa Wallet</p>
+        <p class="list-item__subtitle">Mobile money</p>
+      </div>
+      <button class="btn btn-ghost btn-sm asset-remove-btn" style="color:var(--danger);">Remove</button>
+    </div>
+    <div class="list-item">
+      <div>
+        <p class="list-item__title">BPR Goal Savings</p>
+        <p class="list-item__subtitle">Bank account</p>
+      </div>
+      <button class="btn btn-ghost btn-sm asset-remove-btn" style="color:var(--danger);">Remove</button>
+    </div>
+  </div>
+
+  <div class="empty-state" id="asset-empty" hidden>
+    <div class="empty-state-icon">&#128194;</div>
+    <p class="empty-state-text">No assets added yet</p>
+    <p class="empty-state-sub">Add at least one asset before assigning next of kin.</p>
+  </div>
 </div>
 
 <div class="grid cols-2 gap-lg">
   <div>
+    <!-- Step 2: Next of Kin -->
     <div class="card" style="margin-bottom:24px;">
-      <h2 style="font-size:16px;font-weight:600;margin-bottom:16px;">Add Next of Kin</h2>
+      <div class="section-header">
+        <div class="flex items-center gap-md">
+          <span class="step-badge">2</span>
+          <h2 class="section-header__title" style="margin:0;">Add Next of Kin</h2>
+        </div>
+      </div>
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Full Name</label>
@@ -81,9 +136,15 @@
   </div>
 
   <div>
+    <!-- Step 3: Failsafe -->
     <div class="card">
-      <h2 style="font-size:16px;font-weight:600;margin-bottom:4px;">Failsafe Fallback</h2>
-      <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">If no next of kin accepts, assets go to your failsafe.</p>
+      <div class="section-header">
+        <div class="flex items-center gap-md">
+          <span class="step-badge">3</span>
+          <h2 class="section-header__title" style="margin:0;">Failsafe Fallback</h2>
+        </div>
+      </div>
+      <p style="font-size:13px;color:var(--text-muted);margin:0 0 20px;">If no next of kin accepts, assets go to your failsafe.</p>
 
       <div class="form-group">
         <label class="form-label">Beneficiary Organization</label>
