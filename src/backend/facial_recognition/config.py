@@ -16,8 +16,8 @@ from pathlib import Path
 # --------------------------------------------------------------------------
 # Root directory where all enrolled embeddings are stored, organized by
 # Beneficiary ID: data/embeddings/<beneficiary_id>/sample_XX.npy
-BASE_DIR: Path = Path(__file__).resolve().parent
-EMBEDDINGS_DIR: Path = BASE_DIR / "data" / "embeddings"
+BASE_DIR: Path = Path(__file__).resolve().parents[3]
+EMBEDDINGS_DIR: Path = BASE_DIR / "src" / "data" / "embeddings"
 
 # --------------------------------------------------------------------------
 # InsightFace model settings
