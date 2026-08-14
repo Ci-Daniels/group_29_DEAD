@@ -123,7 +123,7 @@ The storage location for enrolled biometric data. Each beneficiary has their own
 
 ## Technology Stack
 
-- Python 3.11
+- Python 3.12+
 - OpenCV, for camera access and image handling
 - InsightFace (SCRFD for detection, ArcFace for recognition), for the core face recognition models
 - ONNX Runtime, the inference engine InsightFace's models run on
@@ -166,14 +166,40 @@ facial_biometric_poc/
 
 ## Setup and Installation
 
+### Prerequisites
+
+- Python 3.11+
+- PostgreSQL 13+ (installed locally)
+
+### Virtual Environment and Dependencies
+
 ```bash
 python3.11 -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
+source venv/bin/activate        # Windows: .\venv\Scripts\Activate.ps1
 
 pip install -r requirements.txt
 ```
 
 The first run downloads InsightFace's `buffalo_l` model pack, which bundles the SCRFD detector, the ArcFace recognition model, and a facial landmark model, automatically to a local cache directory.
+
+### PostgreSQL Database Setup
+
+Create the database:
+
+```bash
+psql -U postgres -c "CREATE DATABASE group_29_db;"
+```
+
+### Environment Configuration
+
+Copy `.env.example` to `.env` and update with your PostgreSQL credentials:
+
+```bash
+DATABASE_URL=postgresql://postgres:your_password@localhost:5432/group_29_db
+FLASK_SECRET_KEY=your-secret-key
+```
+
+The `.env` file is listed in `.gitignore` and should not be committed to version control.
 
 ## Usage
 
@@ -188,11 +214,25 @@ Each command opens a native window showing the live camera feed with the same ov
 
 ### Web Application
 
+Start the Flask server:
+
 ```bash
 python app.py
 ```
 
 Then open `http://127.0.0.1:5000` in a browser on the same machine, since the camera is accessed by the server itself rather than by the browser.
+
+#### Authentication Endpoints
+
+- **POST** `/api/signup` — Create a new user account
+  - Required JSON: `full_name`, `country`, `national_id`, `email`, `password`
+  - Returns: User object with assigned role (default: `"user"`)
+  - Status: 201 (Created) or 400 (Validation Error)
+
+- **POST** `/api/login` — Authenticate user and create session
+  - Required JSON: `email`, `password`
+  - Returns: User object including role
+  - Status: 200 (Success) or 401 (Unauthorized)
 
 ## Scope and Limitations
 

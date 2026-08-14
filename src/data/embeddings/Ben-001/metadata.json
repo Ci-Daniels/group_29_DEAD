@@ -1,0 +1,9 @@
+{
+  "beneficiary_id": "Ben-001",
+  "name": "Jane doe",
+  "relationship": "Spouse",
+  "phone": "2356789",
+  "email": "jane@example.com",
+  "consent_given": true,
+  "consent_timestamp": "2026-08-13T13:18:14.323Z"
+}
