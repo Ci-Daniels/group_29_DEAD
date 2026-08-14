@@ -1,100 +1,111 @@
 {% extends "base.html" %}
 {% set logged_in = true %}
+{% block title %}Next of Kin{% endblock %}
 
-{% block title %}DEAD System &middot; Beneficiaries{% endblock %}
-
-{% block content %}
-<main class="page">
-  <header class="page__header">
-    <h1>Next of Kin &amp; Beneficiaries</h1>
-    <p class="page__subtitle">Manage your beneficiaries, assign roles, and configure fail-safe options.</p>
-  </header>
-
-  <!-- Add beneficiary form -->
-  <div class="panel" style="margin-bottom: 24px;">
-    <h2 class="panel__title">Add Next of Kin</h2>
-    <form id="beneficiary-form" class="auth-form">
-      <div class="form-row">
-        <label class="field">
-          <span class="field__label">Full Name</span>
-          <input type="text" name="name" required placeholder="e.g. Jane Doe" />
-        </label>
-        <label class="field">
-          <span class="field__label">National ID / Passport</span>
-          <input type="text" name="national_id" required placeholder="e.g. B87654321" />
-        </label>
-      </div>
-      <div class="form-row">
-        <label class="field">
-          <span class="field__label">Relationship</span>
-          <input type="text" name="relationship" required placeholder="e.g. Spouse, Child, Sibling" />
-        </label>
-        <label class="field">
-          <span class="field__label">Assigned Role</span>
-          <select name="role" required class="field__select">
-            <option value="" disabled selected>Select role</option>
-            <option value="admin">Admin (full access)</option>
-            <option value="viewer">Viewer (read-only)</option>
-            <option value="executor">Executor (legal representative)</option>
-          </select>
-        </label>
-      </div>
-      <button type="submit" class="btn btn--primary">Add Beneficiary</button>
-    </form>
-    <p id="beneficiary-message" class="auth-success" hidden></p>
-  </div>
-
-  <!-- Beneficiary list -->
-  <div class="panel" style="margin-bottom: 24px;">
-    <div class="section-header">
-      <h3 class="section-header__title">Registered Next of Kin</h3>
-      <span style="font-size:13px;color:var(--color-text-muted);" id="beneficiary-count">3 beneficiaries</span>
-    </div>
-    <table class="data-table" id="beneficiary-table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>National ID</th>
-          <th>Relationship</th>
-          <th>Role</th>
-          <th>Decision Status</th>
-          <th>Face Enrolled</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="beneficiary-tbody">
-        <!-- Populated dynamically -->
-      </tbody>
-    </table>
-    <div id="beneficiary-empty" class="empty-state" hidden>
-      <div class="empty-state__icon">&#128101;</div>
-      <p class="empty-state__text">No next of kin added yet. Add your first beneficiary above.</p>
-    </div>
-  </div>
-
-  <!-- Fail-safe section -->
-  <div class="panel">
-    <div class="section-header">
-      <h3 class="section-header__title">Fail-Safe Configuration</h3>
-    </div>
-    <p style="font-size:14px;color:var(--color-text-muted);margin:0 0 16px;">
-      If all next of kin decline or are unreachable, your assets will be transferred according to your fail-safe preference.
-    </p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-      <div style="padding:16px;background:var(--color-bg);border-radius:var(--radius-sm);border:1px solid var(--color-border);">
-        <p style="font-weight:600;margin:0 0 4px;">Primary Option</p>
-        <p style="margin:0;color:var(--color-text-muted);font-size:14px;">Charity: Red Cross Kenya</p>
-      </div>
-      <div style="padding:16px;background:var(--color-bg);border-radius:var(--radius-sm);border:1px solid var(--color-border);">
-        <p style="font-weight:600;margin:0 0 4px;">Secondary Option</p>
-        <p style="margin:0;color:var(--color-text-muted);font-size:14px;">Government: Kenya Revenue Authority</p>
-      </div>
-    </div>
-    <a href="{{ url_for('failsafe_page') }}" class="btn btn--ghost" style="margin-top:16px;display:inline-block;">Edit Fail-Safe Settings</a>
-  </div>
-</main>
+{% block nav_extra %}
+<a href="{{ url_for('dashboard_page') }}" class="nav-link">Dashboard</a>
+<a href="{{ url_for('beneficiaries_page') }}" class="nav-link active">Next of Kin</a>
+<a href="{{ url_for('verify_page') }}" class="nav-link">Verification</a>
 {% endblock %}
 
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/beneficiaries.js') }}"></script>
+{% block content %}
+
+<div class="page-header">
+  <h1>Next of Kin &amp; Failsafe</h1>
+  <p>Designate beneficiaries and configure fallback options if none accept.</p>
+</div>
+
+<div class="grid cols-2 gap-lg">
+  <div>
+    <div class="card" style="margin-bottom:24px;">
+      <h2 style="font-size:16px;font-weight:600;margin-bottom:16px;">Add Next of Kin</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" class="form-control" value="Lazarus Rising" id="kin-name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">National ID</label>
+          <input type="text" class="form-control" placeholder="ID number" id="kin-id">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Relationship</label>
+          <select class="form-control" id="kin-relationship">
+            <option>Spouse</option>
+            <option>Child</option>
+            <option>Sibling</option>
+            <option>Parent</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Assigned Role</label>
+          <select class="form-control" id="kin-role">
+            <option value="admin">Admin (full access)</option>
+            <option value="viewer">Viewer (read-only)</option>
+            <option value="executor">Executor (legal)</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block" id="add-kin-btn">+ Add next of kin</button>
+    </div>
+
+    <div class="card">
+      <h2 style="font-size:16px;font-weight:600;margin-bottom:16px;">Registered Next of Kin</h2>
+      <div id="kin-list">
+        <div class="list-item">
+          <div>
+            <p class="list-item__title">Lazarus Rising</p>
+            <p class="list-item__subtitle">Spouse &middot; Admin</p>
+          </div>
+          <span class="badge badge--success">Enrolled</span>
+        </div>
+        <div class="list-item">
+          <div>
+            <p class="list-item__title">Mary Uwase</p>
+            <p class="list-item__subtitle">Sibling &middot; Viewer</p>
+          </div>
+          <span class="badge badge--warning">Pending</span>
+        </div>
+        <div class="list-item">
+          <div>
+            <p class="list-item__title">Jean Bosco</p>
+            <p class="list-item__subtitle">Child &middot; Executor</p>
+          </div>
+          <span class="badge badge--info">Not Enrolled</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <h2 style="font-size:16px;font-weight:600;margin-bottom:4px;">Failsafe Fallback</h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">If no next of kin accepts, assets go to your failsafe.</p>
+
+      <div class="form-group">
+        <label class="form-label">Beneficiary Organization</label>
+        <input type="text" class="form-control" value="Rising Org.">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Failsafe Option</label>
+        <select class="form-control">
+          <option>Charity</option>
+          <option>Government</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Details</label>
+        <textarea class="form-control" rows="3" placeholder="Describe how assets should be distributed...">All unclaimed digital and financial assets to be donated to Rising Org. for community development initiatives.</textarea>
+      </div>
+
+      <button class="btn btn-primary btn-block">Save Failsafe Settings</button>
+    </div>
+  </div>
+</div>
+
 {% endblock %}

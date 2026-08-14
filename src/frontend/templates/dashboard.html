@@ -1,149 +1,209 @@
 {% extends "base.html" %}
 {% set logged_in = true %}
+{% block title %}Dashboard{% endblock %}
 
-{% block title %}DEAD System &middot; Dashboard{% endblock %}
-
-{% block content %}
-<main class="page">
-  <header class="page__header">
-    <h1>Dashboard</h1>
-    <p class="page__subtitle">Welcome back, John Doe. Here's your digital estate overview.</p>
-  </header>
-
-  <!-- Stat cards -->
-  <div class="stat-grid">
-    <div class="stat-card">
-      <p class="stat-card__label">Total Assets</p>
-      <p class="stat-card__value stat-card__value--indigo">12</p>
-    </div>
-    <div class="stat-card">
-      <p class="stat-card__label">Beneficiaries</p>
-      <p class="stat-card__value stat-card__value--teal">3</p>
-    </div>
-    <div class="stat-card">
-      <p class="stat-card__label">Pending Notifications</p>
-      <p class="stat-card__value stat-card__value--warning">2</p>
-    </div>
-    <div class="stat-card">
-      <p class="stat-card__label">Consent Status</p>
-      <p class="stat-card__value stat-card__value--success">&check;</p>
-    </div>
-  </div>
-
-  <!-- Primary holder info -->
-  <div class="panel" style="margin-bottom: 24px;">
-    <div class="section-header">
-      <h3 class="section-header__title">Primary Holder</h3>
-      <a href="{{ url_for('profile_page') }}" class="btn btn--ghost btn--sm">Edit Profile</a>
-    </div>
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
-      <div>
-        <p style="font-size:12px;text-transform:uppercase;letter-spacing:0.04em;color:var(--color-text-muted);margin:0 0 2px;">Name</p>
-        <p style="font-size:14px;font-weight:500;margin:0;">John Doe</p>
-      </div>
-      <div>
-        <p style="font-size:12px;text-transform:uppercase;letter-spacing:0.04em;color:var(--color-text-muted);margin:0 0 2px;">Country</p>
-        <p style="font-size:14px;font-weight:500;margin:0;">Kenya</p>
-      </div>
-      <div>
-        <p style="font-size:12px;text-transform:uppercase;letter-spacing:0.04em;color:var(--color-text-muted);margin:0 0 2px;">National ID</p>
-        <p style="font-size:14px;font-weight:500;margin:0;">A12345678</p>
-      </div>
-      <div>
-        <p style="font-size:12px;text-transform:uppercase;letter-spacing:0.04em;color:var(--color-text-muted);margin:0 0 2px;">Email Scan Consent</p>
-        <span class="badge badge--success">Granted</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Recent assets -->
-  <div class="panel" style="margin-bottom: 24px;">
-    <div class="section-header">
-      <h3 class="section-header__title">Recent Assets</h3>
-      <a href="{{ url_for('assets_page') }}" class="btn btn--ghost btn--sm">View All</a>
-    </div>
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Asset Type</th>
-          <th>Location / Platform</th>
-          <th>Value (USD)</th>
-          <th>Date Added</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Bank Account</td>
-          <td>Equity Bank Kenya</td>
-          <td>$12,500</td>
-          <td>2025-06-15</td>
-        </tr>
-        <tr>
-          <td>Mobile Money</td>
-          <td>M-Pesa</td>
-          <td>$3,200</td>
-          <td>2025-06-14</td>
-        </tr>
-        <tr>
-          <td>Crypto Wallet</td>
-          <td>Binance</td>
-          <td>$8,750</td>
-          <td>2025-06-10</td>
-        </tr>
-        <tr>
-          <td>Social Media</td>
-          <td>YouTube (Influencer)</td>
-          <td>$5,000</td>
-          <td>2025-05-28</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Quick links -->
-  <div class="card-grid">
-    <a href="{{ url_for('beneficiaries_page') }}" class="action-card">
-      <div class="action-card__icon action-card__icon--teal">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <circle cx="8" cy="9" r="3"></circle>
-          <path d="M2 20c0-3.3 2.7-5 6-5s6 1.7 6 5"></path>
-          <circle cx="17" cy="8" r="2.5"></circle>
-          <path d="M15.5 13c2.5 0 5 1.3 5.5 4"></path>
-        </svg>
-      </div>
-      <h3>Next of Kin</h3>
-      <p>Manage beneficiaries, roles, and fail-safe options.</p>
-      <span class="action-card__cta">Manage &rarr;</span>
-    </a>
-
-    <a href="{{ url_for('register_page') }}" class="action-card">
-      <div class="action-card__icon action-card__icon--indigo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <circle cx="12" cy="8" r="4"></circle>
-          <path d="M4 20c0-4 4-6 8-6s8 2 8 6"></path>
-          <path d="M19 8h4M21 6v4"></path>
-        </svg>
-      </div>
-      <h3>Enroll Face</h3>
-      <p>Register a beneficiary's facial biometrics.</p>
-      <span class="action-card__cta">Enroll &rarr;</span>
-    </a>
-
-    <a href="{{ url_for('notifications_page') }}" class="action-card">
-      <div class="action-card__icon action-card__icon--warning">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-          <path d="M13.7 21a2 2 0 01-3.4 0"></path>
-        </svg>
-      </div>
-      <h3>Notifications</h3>
-      <p>2 pending alerts require your attention.</p>
-      <span class="action-card__cta">View &rarr;</span>
-    </a>
-  </div>
-</main>
+{% block nav_extra %}
+<a href="{{ url_for('dashboard_page') }}" class="nav-link active">Dashboard</a>
+<a href="{{ url_for('beneficiaries_page') }}" class="nav-link">Next of Kin</a>
+<a href="{{ url_for('verify_page') }}" class="nav-link">Verification</a>
 {% endblock %}
 
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% block content %}
+
+<div class="dash-topbar">
+  <div>
+    <h1 style="font-size:26px;font-weight:700;margin:0;">Welcome back, Lazarus</h1>
+    <p style="margin:4px 0 0;color:var(--text-muted);font-size:14px;">Here's an overview of your digital estate.</p>
+  </div>
+  <div class="dash-actions">
+    <a href="{{ url_for('death_registry_page') }}" class="btn btn-outline">Death Registry</a>
+    <a href="{{ url_for('verify_page') }}" class="btn btn-primary">Verify Beneficiary</a>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-card__icon stat-card__icon--blue">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    </div>
+    <p class="stat-card__label">Confirmed Cases</p>
+    <p class="stat-card__value" style="color:var(--brand);">6</p>
+    <p class="stat-card__trend" style="color:var(--success);">&uarr; 2 this month</p>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__icon stat-card__icon--amber">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    </div>
+    <p class="stat-card__label">Awaiting Review</p>
+    <p class="stat-card__value" style="color:var(--warning);" id="pending-count">2</p>
+    <p class="stat-card__trend" style="color:var(--text-muted);">Needs attention</p>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__icon stat-card__icon--green">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+    </div>
+    <p class="stat-card__label">Next of Kin</p>
+    <p class="stat-card__value" style="color:var(--success);">4</p>
+    <p class="stat-card__trend" style="color:var(--text-muted);">3 enrolled, 1 pending</p>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__icon stat-card__icon--red">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 17h5l-1.4-1.4A2 2 0 0017 15h-2m-6 0H4l1.4 1.4A2 2 0 007 17h2m6-4V5a2 2 0 00-2-2H9a2 2 0 00-2 2v8"/></svg>
+    </div>
+    <p class="stat-card__label">Total Assets Value</p>
+    <p class="stat-card__value" style="color:var(--danger);" id="total-value">$29,450</p>
+    <p class="stat-card__trend" style="color:var(--success);">&uarr; $8,750 discovered</p>
+  </div>
+</div>
+
+<div class="dashboard-grid">
+  <div class="card" id="pending-card">
+    <div class="section-header">
+      <h3 class="section-header__title">Pending Review</h3>
+      <span class="badge badge--warning" id="pending-badge">2 items</span>
+    </div>
+
+    <div id="pending-list">
+      <div class="pending-item" data-value="8750">
+        <div class="pending-item__info">
+          <p class="pending-item__title">Cryptocurrency Wallet</p>
+          <p class="pending-item__subtitle">Discovered via email scan &middot; Binance &middot; <strong>$8,750</strong></p>
+        </div>
+        <div class="pending-item__actions">
+          <button class="btn btn-outline-success btn-sm btn-confirm-asset">Confirm</button>
+          <button class="btn btn-outline-danger btn-sm btn-reject-asset">Reject</button>
+        </div>
+      </div>
+      <div class="pending-item" data-value="12500">
+        <div class="pending-item__info">
+          <p class="pending-item__title">KCB Savings Account</p>
+          <p class="pending-item__subtitle">Discovered via email scan &middot; Kenya Commercial Bank &middot; <strong>$12,500</strong></p>
+        </div>
+        <div class="pending-item__actions">
+          <button class="btn btn-outline-success btn-sm btn-confirm-asset">Confirm</button>
+          <button class="btn btn-outline-danger btn-sm btn-reject-asset">Reject</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-state" id="pending-empty" hidden>
+      <div class="empty-state-icon">&#10003;</div>
+      <p class="empty-state-text">All caught up!</p>
+      <p class="empty-state-sub">No items pending review.</p>
+    </div>
+  </div>
+
+  <div class="card" id="confirmed-card">
+    <div class="section-header">
+      <h3 class="section-header__title">Confirmed Assets</h3>
+      <span class="badge badge--success" id="confirmed-badge">2 confirmed</span>
+    </div>
+
+    <div id="confirmed-list">
+      <div class="asset-row" data-value="5000">
+        <div class="asset-row__info">
+          <p class="asset-row__title">Instagram (monetized)</p>
+          <p class="asset-row__subtitle">Social Media &middot; Influencer account &middot; <strong>$5,000</strong></p>
+        </div>
+        <span class="badge badge--success">Confirmed</span>
+      </div>
+      <div class="asset-row" data-value="3200">
+        <div class="asset-row__info">
+          <p class="asset-row__title">BPR Goal Savings</p>
+          <p class="asset-row__subtitle">Bank Account &middot; BPR Rwanda &middot; <strong>$3,200</strong></p>
+        </div>
+        <span class="badge badge--success">Confirmed</span>
+      </div>
+    </div>
+
+    <div class="empty-state" id="confirmed-empty" hidden>
+      <div class="empty-state-icon">&#128194;</div>
+      <p class="empty-state-text">No assets yet</p>
+      <p class="empty-state-sub">Confirm items from Pending Review to see them here.</p>
+    </div>
+  </div>
+</div>
+
+<div class="dashboard-grid dashboard-grid--three">
+  <div class="card text-center">
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:20px;">Asset Types Breakdown</h3>
+    <div class="donut-wrapper" id="donut-wrapper">
+      <div class="donut-svg-container">
+        <svg viewBox="0 0 200 200" width="180" height="180">
+          <g transform="rotate(-90 100 100)">
+            <circle cx="100" cy="100" r="70" fill="none" stroke="#94a3b8" stroke-width="32"
+              stroke-dasharray="164.93 439.82" class="donut-segment" data-label="Bank &amp; Wallets" data-pct="38"/>
+            <circle cx="100" cy="100" r="70" fill="none" stroke="#1e293b" stroke-width="32"
+              stroke-dasharray="114.52 439.82" stroke-dashoffset="-164.93" class="donut-segment" data-label="Crypto" data-pct="26"/>
+            <circle cx="100" cy="100" r="70" fill="none" stroke="#f59e0b" stroke-width="32"
+              stroke-dasharray="87.96 439.82" stroke-dashoffset="-279.45" class="donut-segment" data-label="Subscriptions" data-pct="20"/>
+            <circle cx="100" cy="100" r="70" fill="none" stroke="#10b981" stroke-width="32"
+              stroke-dasharray="70.37 439.82" stroke-dashoffset="-367.41" class="donut-segment" data-label="Social / Monetized" data-pct="16"/>
+          </g>
+          <circle cx="100" cy="100" r="52" fill="white"/>
+          <text x="100" y="95" text-anchor="middle" font-size="28" font-weight="700" fill="var(--text-main)">100%</text>
+          <text x="100" y="115" text-anchor="middle" font-size="11" fill="var(--text-muted)">8 assets</text>
+        </svg>
+        <div class="donut-tooltip" id="donut-tooltip" hidden></div>
+      </div>
+    </div>
+    <div class="donut-legend" style="gap:6px;margin-top:12px;">
+<div class="donut-legend__item"><div class="donut-legend__dot" style="background:#94a3b8;"></div> Bank &amp; Wallets 38%</div>
+          <div class="donut-legend__item"><div class="donut-legend__dot" style="background:#1e293b;"></div> Crypto 26%</div>
+          <div class="donut-legend__item"><div class="donut-legend__dot" style="background:#f59e0b;"></div> Subscriptions 20%</div>
+          <div class="donut-legend__item"><div class="donut-legend__dot" style="background:#10b981;"></div> Social / Monetized 16%</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;">Recent Activity</h3>
+    <div class="activity-item">
+      <div class="activity-item__dot" style="background:var(--success);"></div>
+      <div>
+        <p class="activity-item__text">Instagram account confirmed as asset</p>
+        <p class="activity-item__time">2 hours ago</p>
+      </div>
+    </div>
+    <div class="activity-item">
+      <div class="activity-item__dot" style="background:var(--brand);"></div>
+      <div>
+        <p class="activity-item__text">New beneficiary enrolled: Mary Uwase</p>
+        <p class="activity-item__time">Yesterday</p>
+      </div>
+    </div>
+    <div class="activity-item">
+      <div class="activity-item__dot" style="background:var(--warning);"></div>
+      <div>
+        <p class="activity-item__text">Cryptocurrency wallet discovered via email scan</p>
+        <p class="activity-item__time">2 days ago</p>
+      </div>
+    </div>
+    <div class="activity-item">
+      <div class="activity-item__dot" style="background:var(--brand);"></div>
+      <div>
+        <p class="activity-item__text">Death registry check completed</p>
+        <p class="activity-item__time">3 days ago</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;">Quick Actions</h3>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <a href="{{ url_for('beneficiaries_page') }}" class="btn btn-outline btn-block" style="justify-content:flex-start;padding:14px 16px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="9" r="3"/><path d="M2 20c0-3.3 2.7-5 6-5s6 1.7 6 5"/><circle cx="17" cy="8" r="2.5"/><path d="M15.5 13c2.5 0 5 1.3 5.5 4"/></svg>
+        Manage Next of Kin
+      </a>
+      <a href="{{ url_for('verify_page') }}" class="btn btn-outline btn-block" style="justify-content:flex-start;padding:14px 16px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>
+        Run Verification
+      </a>
+      <a href="{{ url_for('death_registry_page') }}" class="btn btn-outline btn-block" style="justify-content:flex-start;padding:14px 16px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 17h5l-1.4-1.4A2 2 0 0017 15h-2m-6 0H4l1.4 1.4A2 2 0 007 17h2m6-4V5a2 2 0 00-2-2H9a2 2 0 00-2 2v8"/></svg>
+        Death Registry
+      </a>
+    </div>
+  </div>
+</div>
+
 {% endblock %}

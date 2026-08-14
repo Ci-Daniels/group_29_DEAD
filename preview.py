@@ -1,5 +1,5 @@
 """
-preview.py — Standalone preview server for the frontend only.
+preview.py -- Standalone preview server for the DEAD frontend.
 ----------------------------------------------------------------
 Run this to browse all HTML pages with dummy data. This does NOT touch
 or depend on the main app.py or any backend AI modules.
@@ -19,8 +19,6 @@ app = Flask(
 )
 
 
-# All pages use this context: logged_in=True for authenticated pages,
-# logged_in=False (default) for public pages.
 def auth_context():
     return {"logged_in": True}
 
@@ -51,13 +49,8 @@ def signup_page():
 # Authenticated routes
 # ---------------------------------------------------------------------------
 @app.route("/dashboard")
-def dashboard():
+def dashboard_page():
     return render_template("dashboard.html", **auth_context())
-
-
-@app.route("/assets")
-def assets_page():
-    return render_template("assets.html", **auth_context())
 
 
 @app.route("/beneficiaries")
@@ -65,9 +58,9 @@ def beneficiaries_page():
     return render_template("beneficiaries.html", **auth_context())
 
 
-@app.route("/register")
-def register_page():
-    return render_template("register.html", **auth_context())
+@app.route("/death-registry")
+def death_registry_page():
+    return render_template("death_registry.html", **auth_context())
 
 
 @app.route("/verify")
@@ -75,35 +68,20 @@ def verify_page():
     return render_template("verify.html", **auth_context())
 
 
-@app.route("/failsafe")
-def failsafe_page():
-    return render_template("failsafe.html", **auth_context())
-
-
-@app.route("/notifications")
-def notifications_page():
-    return render_template("notifications.html", **auth_context())
-
-
-@app.route("/profile")
-def profile_page():
-    return render_template("profile.html", **auth_context())
-
-
-@app.route("/compliance")
-def compliance_page():
-    return render_template("compliance.html", **auth_context())
+@app.route("/handover")
+def handover_page():
+    return render_template("handover.html", **auth_context())
 
 
 @app.route("/logout")
 def logout():
-    return "Logged out. <a href='/'>Go to home</a>"
+    return 'Logged out. <a href="/">Go to home</a>'
 
 
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    print("\n  DEAD System — Frontend Preview Server")
+    print("\n  DEAD System -- Frontend Preview Server")
     print("  Open http://127.0.0.1:5050 in your browser\n")
     app.run(host="127.0.0.1", port=5050, debug=True)

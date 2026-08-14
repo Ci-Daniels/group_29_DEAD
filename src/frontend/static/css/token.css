@@ -1,53 +1,82 @@
-/* --------------------------------------------------------------------
-   token.css — Design tokens
-   All custom properties (colors, spacing, typography, radii, shadows)
-   live here so they can be swapped out when applying a design template.
-   -------------------------------------------------------------------- */
-
 :root {
-  /* ---- Palette ---- */
-  --color-bg: #f6f7fb;
-  --color-surface: #ffffff;
-  --color-border: #e5e7eb;
-  --color-text: #1f2430;
-  --color-text-muted: #6b7280;
+  /* Backgrounds */
+  --bg-body: #f0f2f5;
+  --bg-surface: #ffffff;
+  --bg-subtle: #f8fafc;
+  --bg-card: #ffffff;
 
-  --color-indigo: #4f46e5;
-  --color-indigo-dark: #4338ca;
-  --color-teal: #0d9488;
-  --color-slate: #64748b;
+  /* Text */
+  --text-main: #111827;
+  --text-secondary: #374151;
+  --text-muted: #6b7280;
+  --text-inverse: #ffffff;
 
-  --color-success: #16a34a;
-  --color-success-bg: #ecfdf3;
-  --color-error: #dc2626;
-  --color-error-bg: #fef2f2;
-  --color-warning: #d97706;
-  --color-warning-bg: #fffbeb;
+  /* Brand */
+  --brand: #1a56db;
+  --brand-light: #3b82f6;
+  --brand-dark: #1e40af;
+  --brand-bg: #eff6ff;
 
-  /* ---- Radii ---- */
-  --radius-sm: 10px;
-  --radius-md: 16px;
-  --radius-lg: 20px;
+  /* Semantic */
+  --success: #059669;
+  --success-light: #10b981;
+  --success-bg: #ecfdf5;
+  --success-border: #a7f3d0;
 
-  /* ---- Shadows ---- */
-  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 4px 16px rgba(16, 24, 40, 0.06);
-  --shadow-modal: 0 20px 60px rgba(16, 24, 40, 0.25);
+  --warning: #d97706;
+  --warning-light: #f59e0b;
+  --warning-bg: #fffbeb;
+  --warning-border: #fcd34d;
 
-  /* ---- Transitions ---- */
-  --transition-fast: 150ms ease;
-  --transition-medium: 250ms ease;
+  --danger: #dc2626;
+  --danger-light: #ef4444;
+  --danger-bg: #fef2f2;
+  --danger-border: #fecaca;
 
-  /* ---- Typography ---- */
-  --font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --info: #2563eb;
+  --info-bg: #eff6ff;
 
-  /* ---- Spacing ---- */
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 16px;
-  --space-lg: 24px;
-  --space-xl: 32px;
-  --space-2xl: 48px;
+  /* Borders */
+  --border: #e5e7eb;
+  --border-light: #f3f4f6;
+  --border-focus: #3b82f6;
 
-  /* ---- Layout ---- */
-  --max-width: 1100px;
+  /* Radii */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.04);
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Transitions */
+  --transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Layout */
+  --max-width: 1200px;
+  --nav-height: 68px;
 }

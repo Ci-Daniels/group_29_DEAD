@@ -1,72 +1,68 @@
 {% extends "base.html" %}
-
-{% block title %}DEAD System &middot; Sign Up{% endblock %}
+{% block title %}Sign Up{% endblock %}
 
 {% block content %}
-<main class="page page--centered">
+<div class="auth-page">
   <div class="auth-card">
     <div class="auth-card__header">
-      <span class="auth-card__logo">◈</span>
-      <h1>Create Account</h1>
-      <p class="auth-card__subtitle">Register as a primary asset holder</p>
+      <div class="auth-card__logo">D</div>
+      <h1>Create your account</h1>
+      <p>Register as a primary asset holder</p>
     </div>
 
-    <form id="signup-form" class="auth-form">
+    <form action="{{ url_for('login_page') }}" method="GET">
       <div class="form-row">
-        <label class="field">
-          <span class="field__label">Full Name</span>
-          <input type="text" name="name" required placeholder="John Doe" />
-        </label>
-        <label class="field">
-          <span class="field__label">National ID / Passport</span>
-          <input type="text" name="national_id" required placeholder="e.g. A12345678" />
-        </label>
+        <div class="form-group">
+          <label class="form-label">Full name</label>
+          <input type="text" class="form-control" value="Rising Lazarus" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Country</label>
+          <select class="form-control" required>
+            <option value="">Select country</option>
+            <option value="RW" selected>Rwanda</option>
+            <option value="KE">Kenya</option>
+            <option value="NG">Nigeria</option>
+            <option value="GH">Ghana</option>
+            <option value="ZA">South Africa</option>
+            <option value="UG">Uganda</option>
+            <option value="TZ">Tanzania</option>
+          </select>
+        </div>
       </div>
 
-      <label class="field">
-        <span class="field__label">Country of Residence</span>
-        <select name="country" required class="field__select">
-          <option value="" disabled selected>Select your country</option>
-          <option value="KE">Kenya</option>
-          <option value="NG">Nigeria</option>
-          <option value="RW">Rwanda</option>
-          <option value="GH">Ghana</option>
-          <option value="ZA">South Africa</option>
-          <option value="UG">Uganda</option>
-          <option value="TZ">Tanzania</option>
-          <option value="ET">Ethiopia</option>
-        </select>
-      </label>
-
-      <label class="field">
-        <span class="field__label">Email Address</span>
-        <input type="email" name="email" required placeholder="you@example.com" autocomplete="email" />
-      </label>
-
-      <div class="form-row">
-        <label class="field">
-          <span class="field__label">Password</span>
-          <input type="password" name="password" required placeholder="Min. 8 characters" autocomplete="new-password" minlength="8" />
-        </label>
-        <label class="field">
-          <span class="field__label">Confirm Password</span>
-          <input type="password" name="confirm_password" required placeholder="Re-enter password" autocomplete="new-password" />
-        </label>
+      <div class="form-group">
+        <label class="form-label">National ID / Passport</label>
+        <input type="text" class="form-control" placeholder="e.g. 1 1998 1234567 8" required>
       </div>
 
-      <button type="submit" class="btn btn--primary">Create Account</button>
+      <div class="form-group">
+        <label class="form-label">Email address</label>
+        <input type="email" class="form-control" placeholder="you@example.com" required autocomplete="email">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" class="form-control" placeholder="Min. 8 characters" required minlength="8" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm password</label>
+          <input type="password" class="form-control" placeholder="Repeat password" required>
+        </div>
+      </div>
+
+      <label class="form-check" style="margin:20px 0;">
+        <input type="checkbox" checked>
+        <span>I consent to asset discovery via email metadata scanning</span>
+      </label>
+
+      <button type="submit" class="btn btn-primary btn-block btn-lg">Create account</button>
     </form>
-
-    <p id="signup-error" class="auth-error" hidden></p>
-    <p id="signup-success" class="auth-success" hidden></p>
 
     <p class="auth-footer">
       Already have an account? <a href="{{ url_for('login_page') }}">Sign in</a>
     </p>
   </div>
-</main>
-{% endblock %}
-
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/signup.js') }}"></script>
+</div>
 {% endblock %}

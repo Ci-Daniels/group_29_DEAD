@@ -1,72 +1,102 @@
 {% extends "base.html" %}
+{% set logged_in = true %}
+{% block title %}Verification{% endblock %}
 
-{% block title %}Estate Access &middot; Verify Beneficiary{% endblock %}
-
-{% block content %}
-<main class="page">
-  <header class="page__header">
-    <h1>Verify Beneficiary</h1>
-    <p class="page__subtitle">Confirm identity with a live liveness check and face match.</p>
-  </header>
-
-  <section class="workspace workspace--verify">
-    <div class="panel preview-panel preview-panel--large">
-      <div class="video-frame video-frame--large">
-        <div id="video-placeholder" class="video-placeholder">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <rect x="3" y="6" width="14" height="12" rx="2"></rect>
-            <path d="M17 10l4-2v8l-4-2"></path>
-          </svg>
-          <p>Camera preview will appear here once verification starts.</p>
-        </div>
-        <img id="video-feed" class="video-feed" alt="Live camera preview" hidden />
-      </div>
-
-      <form id="verify-form" class="verify-form">
-        <label class="field field--inline">
-          <span class="field__label">Beneficiary ID</span>
-          <input type="text" name="beneficiary_id" required placeholder="e.g. BEN-0001" />
-        </label>
-        <button type="submit" id="start-btn" class="btn btn--primary">Start Verification</button>
-      </form>
-    </div>
-
-    <aside class="panel status-panel-card">
-      <h2 class="panel__title">Verification Stages</h2>
-      <ul class="stage-list">
-        <li>Looking for face...</li>
-        <li>Face detected</li>
-        <li>Liveness check...</li>
-        <li>Comparing...</li>
-        <li>Verified / Not Verified</li>
-      </ul>
-
-      <div class="status-strip status-strip--card">
-        <span class="status-dot status-dot--pulse"></span>
-        <div>
-          <p id="status-text" class="status-strip__status">Waiting to start...</p>
-          <p id="progress-text" class="status-strip__progress"></p>
-        </div>
-      </div>
-    </aside>
-  </section>
-</main>
-
-<!-- Result modal -->
-<div id="result-modal" class="modal" hidden>
-  <div class="modal__card">
-    <div id="modal-icon" class="modal__icon">&#10004;</div>
-    <h2 id="modal-title" class="modal__title">Identity Verified</h2>
-    <p id="modal-subtitle" class="modal__subtitle">Access Granted</p>
-    <p id="modal-score" class="modal__score"></p>
-    <div class="modal__actions">
-      <button id="modal-retry-btn" class="btn btn--ghost">Try Again</button>
-      <button id="modal-close-btn" class="btn btn--primary">Continue to Dashboard</button>
-    </div>
-  </div>
-</div>
+{% block nav_extra %}
+<a href="{{ url_for('dashboard_page') }}" class="nav-link">Dashboard</a>
+<a href="{{ url_for('beneficiaries_page') }}" class="nav-link">Next of Kin</a>
+<a href="{{ url_for('verify_page') }}" class="nav-link active">Verification</a>
 {% endblock %}
 
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/verify.js') }}"></script>
+{% block content %}
+
+<div class="page-header text-center">
+  <h1>Beneficiary Verification Workflow</h1>
+  <p>Death trigger, notification, biometric verification, and consent.</p>
+</div>
+
+<div style="max-width:560px;margin:0 auto;">
+
+  <!-- Step 1: Death Trigger -->
+  <div class="step-flow active" id="step-1">
+    <div class="card card--flat text-center">
+      <div class="stat-card__icon stat-card__icon--red" style="margin:0 auto 16px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M15 17h5l-1.4-1.4A2 2 0 0017 15h-2m-6 0H4l1.4 1.4A2 2 0 007 17h2m6-4V5a2 2 0 00-2-2H9a2 2 0 00-2 2v8"/>
+        </svg>
+      </div>
+      <h2 style="margin-bottom:12px;">Death Certificate Generated?</h2>
+      <p style="font-size:14px;color:var(--text-muted);margin-bottom:20px;">Checking National Death Registry for Rising Lazarus...</p>
+
+      <div style="display:flex;gap:12px;justify-content:center;">
+        <a href="{{ url_for('death_registry_page') }}" class="btn btn-outline">No, keep checking</a>
+        <button class="btn btn-danger btn-next-step">Yes, proceed</button>
+      </div>
+    </div>
+    <div class="flow-arrow" style="margin-top:24px;"></div>
+  </div>
+
+  <!-- Step 2: Notification -->
+  <div class="step-flow" id="step-2">
+    <div class="card card--flat text-center">
+      <div class="stat-card__icon stat-card__icon--amber" style="margin:0 auto 16px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>
+        </svg>
+      </div>
+      <h2 style="margin-bottom:4px;">You have been named as next of kin</h2>
+      <p style="font-size:14px;color:var(--text-muted);margin-bottom:20px;">
+        Rising Lazarus has registered you to manage his digital assets
+      </p>
+      <button class="btn btn-primary btn-block btn-next-step">Begin Verification</button>
+    </div>
+    <div class="flow-arrow" style="margin-top:24px;"></div>
+  </div>
+
+  <!-- Step 3: Biometric -->
+  <div class="step-flow" id="step-3">
+    <div class="card card--flat text-center">
+      <div class="stat-card__icon stat-card__icon--blue" style="margin:0 auto 16px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 3v2M15 3v2M3 9h2M19 9h2M3 15h2M19 15h2M9 21v-2M15 21v-2"/><circle cx="12" cy="12" r="5"/>
+        </svg>
+      </div>
+      <h2 style="margin-bottom:4px;">Biometric Verification</h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">Face Recognition (OpenCV + InsightFace)</p>
+
+      <div style="background:var(--bg-body);border:1px solid var(--border);border-radius:var(--radius-md);padding:32px;margin:20px 0;display:inline-block;width:100%;">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="1.5" style="margin:0 auto;display:block;">
+          <rect x="3" y="6" width="14" height="12" rx="2"/><path d="M17 10l4-2v8l-4-2"/>
+        </svg>
+        <p style="font-size:14px;font-weight:600;margin-top:8px;">Scan Face</p>
+        <p style="font-size:12px;color:var(--text-muted);">Position your face in the frame</p>
+      </div>
+
+      <button class="btn btn-primary btn-block btn-next-step">Verify Identity</button>
+    </div>
+    <div class="flow-arrow" style="margin-top:24px;"></div>
+  </div>
+
+  <!-- Step 4: Consent -->
+  <div class="step-flow" id="step-4">
+    <div class="card card--flat text-center">
+      <div class="stat-card__icon stat-card__icon--green" style="margin:0 auto 16px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 12l2 2 4-4"/><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <h2 style="margin-bottom:2px;color:var(--success);">Access Granted</h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Identity verified &middot; Score: 0.9234</p>
+
+      <h3 style="font-size:16px;font-weight:600;margin-bottom:8px;">Consent Form</h3>
+      <p style="font-size:14px;color:var(--text-muted);margin-bottom:20px;">Do you wish to manage the deceased assets?</p>
+
+      <div style="display:flex;gap:12px;">
+        <a href="{{ url_for('handover_page') }}" class="btn btn-success btn-block">Yes, proceed</a>
+        <a href="{{ url_for('dashboard_page') }}" class="btn btn-outline-danger btn-block">No, decline</a>
+      </div>
+    </div>
+  </div>
+
+</div>
 {% endblock %}

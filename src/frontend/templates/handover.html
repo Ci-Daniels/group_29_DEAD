@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% set logged_in = true %}
+{% block title %}Handover{% endblock %}
+
+{% block nav_extra %}
+<a href="{{ url_for('dashboard_page') }}" class="nav-link">Dashboard</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header text-center">
+  <h1>Consent &amp; Asset Handover</h1>
+  <p>Legal compliance, asset inventory download, and failsafe handoff.</p>
+</div>
+
+<div style="max-width:700px;margin:0 auto;">
+
+  <!-- Consent Form -->
+  <div class="card text-center" style="margin-bottom:24px;position:relative;">
+    <h2 style="font-size:18px;font-weight:600;margin-bottom:16px;">Consent Form</h2>
+
+    <button class="btn btn-outline btn-block" style="font-size:15px;padding:14px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Download consent form
+    </button>
+
+    <div class="divider"></div>
+
+    <div style="text-align:left;">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Legal Status</h3>
+      <div class="grid cols-2 gap-sm">
+        <div style="padding:12px;background:var(--bg-subtle);border-radius:var(--radius-sm);">
+          <p style="font-size:13px;color:var(--warning);font-weight:500;">&#9660; Not yet engaged legal</p>
+        </div>
+        <div style="padding:12px;background:var(--bg-subtle);border-radius:var(--radius-sm);">
+          <p style="font-size:13px;color:var(--warning);font-weight:500;">&#9660; Pending review</p>
+        </div>
+        <div style="padding:12px;background:var(--bg-subtle);border-radius:var(--radius-sm);">
+          <p style="font-size:13px;color:var(--success);font-weight:500;">&#10003; Engaged legal</p>
+        </div>
+        <div style="padding:12px;background:var(--bg-subtle);border-radius:var(--radius-sm);">
+          <p style="font-size:13px;color:var(--success);font-weight:500;">&#10003; Approved</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Split Flow -->
+  <div style="display:flex;justify-content:center;margin-bottom:8px;">
+    <div class="flow-arrow"></div>
+  </div>
+
+  <div class="branch-container">
+    <div class="branch-line-horizontal"></div>
+    <div class="branch-line-vertical branch-line-vertical-left"></div>
+    <div class="branch-line-vertical branch-line-vertical-right"></div>
+  </div>
+
+  <div class="grid cols-2 gap-lg" style="margin-top:16px;">
+    <!-- Left: Asset Inventory -->
+    <div class="card text-center">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
+        After legal is engaged, proceed to downloading asset inventory
+      </p>
+      <h2 style="font-size:16px;font-weight:600;margin-bottom:16px;">Asset Inventory</h2>
+
+      <button class="btn btn-primary btn-block" style="padding:16px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Download asset inventory
+      </button>
+
+      <div class="divider"></div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Inventory includes:</p>
+      <ul style="font-size:12px;color:var(--text-muted);text-align:left;padding-left:20px;">
+        <li>Instagram (monetized) — $5,000</li>
+        <li>BPR Goal Savings — $12,500</li>
+        <li>Cryptocurrency (Binance) — $8,750</li>
+        <li>M-Pesa Mobile Money — $3,200</li>
+      </ul>
+    </div>
+
+    <!-- Right: Failsafe -->
+    <div class="card text-center">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
+        If no next of kin accepts management of the deceased assets
+      </p>
+      <h2 style="font-size:16px;font-weight:600;margin-bottom:16px;">Failsafe Handoff</h2>
+
+      <div class="stat-card__icon stat-card__icon--amber" style="margin:0 auto 12px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>
+        </svg>
+      </div>
+
+      <p style="font-size:14px;font-weight:600;margin-bottom:8px;">Assets routed to failsafe</p>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">
+        In the absence of a next of kin, all assets will be routed to the designated charity: <strong>Rising Org.</strong>
+      </p>
+
+      <button class="btn btn-outline btn-block">View Transfer Status</button>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:24px;">
+    <a href="{{ url_for('dashboard_page') }}" class="btn btn-ghost">&larr; Back to Dashboard</a>
+  </div>
+
+</div>
+{% endblock %}

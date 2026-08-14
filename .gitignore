@@ -19,3 +19,7 @@ __pycache__/
 Group_29.pdf
 image.png
 credentials.*
+resources/
+templates_legacy/
+js_legacy/
+css_legacy/

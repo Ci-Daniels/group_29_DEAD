@@ -1,125 +1,169 @@
 {% extends "base.html" %}
-
-{% block title %}DEAD System &middot; Deceased Electronic Assets Discovery{% endblock %}
+{% block title %}Landing{% endblock %}
 
 {% block content %}
-<!-- Hero -->
-<section class="hero">
-  <div class="hero__inner">
-    <h1 class="hero__title">Your Digital Legacy,<br />Securely Passed On</h1>
-    <p class="hero__subtitle">
-      Discover, organize, and transfer digital assets to your loved ones
-      with AI-powered asset scanning and facial biometric verification.
-    </p>
-    <div class="hero__actions">
-      <a href="{{ url_for('signup_page') }}" class="btn btn--primary btn--lg">Get Started</a>
-      <a href="{{ url_for('login_page') }}" class="btn btn--ghost btn--lg">Sign In</a>
-    </div>
-  </div>
-</section>
 
-<!-- Features -->
-<section class="page">
-  <div class="features-grid">
-    <div class="feature-card">
-      <div class="feature-card__icon feature-card__icon--indigo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.7 0 3-4 3-9s-1.3-9-3-9m0 18c-1.7 0-3-4-3-9s1.3-9 3-9m-9 9a9 9 0 019-9" />
-        </svg>
+<section class="landing-hero">
+  <div class="landing-hero__grid">
+    <div class="landing-hero__text">
+      <span class="landing-pill">Digital Estate Registry</span>
+      <h1>Nothing you own<br>gets left unclaimed</h1>
+      <p>We find what you forgot to declare. Biometrics and legal review gate every claim.</p>
+      <div class="landing-hero__cta">
+        <a href="{{ url_for('signup_page') }}" class="btn btn-primary btn-lg">Get started</a>
+        <a href="{{ url_for('login_page') }}" class="btn btn-outline btn-lg">Sign in</a>
       </div>
-      <h3>Asset Discovery</h3>
-      <p>AI scans your email metadata to identify digital assets you may have forgotten — bank accounts, crypto, social media, and more.</p>
     </div>
-
-    <div class="feature-card">
-      <div class="feature-card__icon feature-card__icon--teal">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"></path>
-          <path d="M9 12l2 2 4-4"></path>
-        </svg>
-      </div>
-      <h3>Biometric Verification</h3>
-      <p>Next of kin are verified through facial recognition with liveness detection before any asset access is granted.</p>
-    </div>
-
-    <div class="feature-card">
-      <div class="feature-card__icon feature-card__icon--slate">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <circle cx="8" cy="9" r="3"></circle>
-          <path d="M2 20c0-3.3 2.7-5 6-5s6 1.7 6 5"></path>
-          <circle cx="17" cy="8" r="2.5"></circle>
-          <path d="M15.5 13c2.5 0 5 1.3 5.5 4"></path>
-        </svg>
-      </div>
-      <h3>Beneficiary Management</h3>
-      <p>Assign trusted next of kin, define roles and permissions, and set fail-safe options if beneficiaries decline.</p>
-    </div>
-
-    <div class="feature-card">
-      <div class="feature-card__icon feature-card__icon--warning">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <path d="M15 17h5l-1.4-1.4A2 2 0 0017 15h-2m-6 0H4l1.4 1.4A2 2 0 007 17h2m6-4V5a2 2 0 00-2-2H9a2 2 0 00-2 2v8m10 0a2 2 0 012 2v1a2 2 0 01-2 2H7a2 2 0 01-2-2v-1a2 2 0 012-2h10z"></path>
-        </svg>
-      </div>
-      <h3>Death Verification</h3>
-      <p>Integration with national death registries ensures assets are only released upon verified death certificate submission.</p>
-    </div>
-
-    <div class="feature-card">
-      <div class="feature-card__icon feature-card__icon--success">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
-        </svg>
-      </div>
-      <h3>Automated Notifications</h3>
-      <p>Next of kin are automatically notified when assets become available, with a structured compliance workflow.</p>
-    </div>
-
-    <div class="feature-card">
-      <div class="feature-card__icon feature-card__icon--indigo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <rect x="3" y="11" width="18" height="10" rx="2"></rect>
-          <path d="M7 11V7a5 5 0 0110 0v4"></path>
-        </svg>
-      </div>
-      <h3>Compliance First</h3>
-      <p>Consent forms, legal checkpoints, and secure document upload ensure every transfer follows due legal process.</p>
-    </div>
-  </div>
-</section>
-
-<!-- How It Works -->
-<section class="page">
-  <div class="steps-section">
-    <h2 class="steps-section__title">How It Works</h2>
-    <div class="steps">
-      <div class="step">
-        <div class="step__number">1</div>
-        <h4>Register Your Assets</h4>
-        <p>Declare digital assets and let AI scan your email for ones you may have missed.</p>
-      </div>
-      <div class="step__arrow">&rarr;</div>
-      <div class="step">
-        <div class="step__number">2</div>
-        <h4>Assign Beneficiaries</h4>
-        <p>Name your next of kin, assign roles, and enroll their face for biometric verification.</p>
-      </div>
-      <div class="step__arrow">&rarr;</div>
-      <div class="step">
-        <div class="step__number">3</div>
-        <h4>Secure Transfer</h4>
-        <p>Upon verified passing, beneficiaries are notified, verified, and granted access.</p>
+    <div class="landing-hero__visual">
+      <div class="landing-hero__donut-card">
+        <div class="donut-wrapper" id="donut-wrapper">
+          <div class="donut-svg-container">
+            <svg viewBox="0 0 240 240" width="200" height="200">
+              <g transform="rotate(-90 120 120)">
+                <circle cx="120" cy="120" r="85" fill="none" stroke="#94a3b8" stroke-width="22"
+                  stroke-dasharray="203 533.8" class="donut-segment" data-label="Bank &amp; wallets" data-pct="38"/>
+                <circle cx="120" cy="120" r="85" fill="none" stroke="#1e293b" stroke-width="22"
+                  stroke-dasharray="139 533.8" stroke-dashoffset="-203" class="donut-segment" data-label="Crypto" data-pct="26"/>
+                <circle cx="120" cy="120" r="85" fill="none" stroke="#f59e0b" stroke-width="22"
+                  stroke-dasharray="107 533.8" stroke-dashoffset="-342" class="donut-segment" data-label="Subscriptions" data-pct="20"/>
+                <circle cx="120" cy="120" r="85" fill="none" stroke="#10b981" stroke-width="22"
+                  stroke-dasharray="85 533.8" stroke-dashoffset="-449" class="donut-segment" data-label="Social / monetized" data-pct="16"/>
+              </g>
+              <circle cx="120" cy="120" r="72" fill="var(--bg-surface)"/>
+              <text x="120" y="110" text-anchor="middle" font-size="38" font-weight="800" fill="var(--text-main)">30</text>
+              <text x="120" y="134" text-anchor="middle" font-size="13" fill="var(--text-muted)" font-weight="500">assets recovered</text>
+            </svg>
+            <div class="donut-tooltip" id="donut-tooltip" hidden></div>
+          </div>
+        </div>
+        <div class="landing-hero__legend">
+          <div class="landing-hero__legend-item"><span style="color:#94a3b8;font-weight:700;">38%</span> Bank &amp; wallets</div>
+          <div class="landing-hero__legend-item"><span style="color:#1e293b;font-weight:700;">26%</span> Crypto</div>
+          <div class="landing-hero__legend-item"><span style="color:#f59e0b;font-weight:700;">20%</span> Subscriptions</div>
+          <div class="landing-hero__legend-item"><span style="color:#10b981;font-weight:700;">16%</span> Social</div>
+        </div>
+        <p class="landing-hero__trend">&#9650; 5% this month</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- CTA -->
-<section class="cta-section">
-  <div class="cta-section__inner">
-    <h2>Start protecting your digital legacy today.</h2>
-    <p>Join thousands securing their digital assets for the next generation.</p>
-    <a href="{{ url_for('signup_page') }}" class="btn btn--primary btn--lg">Create Your Account</a>
+<section class="landing-section">
+  <div class="landing-section__header">
+    <h2>How it works</h2>
+    <p>Three simple steps to secure your digital inheritance</p>
+  </div>
+
+  <div class="landing-steps">
+    <div class="landing-step">
+      <div class="landing-step__icon landing-step__icon--blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+      </div>
+      <h3>Register</h3>
+      <p>Create your account, consent to email metadata scanning, and declare your known digital assets.</p>
+    </div>
+
+    <div class="landing-step__connector">
+      <div class="landing-step__line"></div>
+    </div>
+
+    <div class="landing-step">
+      <div class="landing-step__icon landing-step__icon--green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>
+      </div>
+      <h3>Verify</h3>
+      <p>Next of kin are authenticated through facial biometric verification with liveness checks.</p>
+    </div>
+
+    <div class="landing-step__connector">
+      <div class="landing-step__line"></div>
+    </div>
+
+    <div class="landing-step">
+      <div class="landing-step__icon landing-step__icon--amber">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </div>
+      <h3>Handover</h3>
+      <p>Legal compliance, consent forms, and secure transfer of assets to verified beneficiaries.</p>
+    </div>
   </div>
 </section>
+
+<section class="landing-section landing-section--alt">
+  <div class="landing-section__header">
+    <h2>Everything you need</h2>
+    <p>A complete platform for digital estate planning</p>
+  </div>
+
+  <div class="landing-features">
+    <div class="landing-feature">
+      <div class="landing-feature__icon landing-feature__icon--blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      </div>
+      <div>
+        <h4>AI Asset Discovery</h4>
+        <p>Connect your email and let AI scan metadata to identify undeclared digital assets — bank accounts, crypto, subscriptions, and more.</p>
+      </div>
+    </div>
+
+    <div class="landing-feature">
+      <div class="landing-feature__icon landing-feature__icon--green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div>
+        <h4>Facial Biometric Verification</h4>
+        <p>SCRFD + ArcFace powered recognition with liveness detection ensures only the rightful next of kin can claim assets.</p>
+      </div>
+    </div>
+
+    <div class="landing-feature">
+      <div class="landing-feature__icon landing-feature__icon--amber">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      </div>
+      <div>
+        <h4>Automated Notifications</h4>
+        <p>Beneficiaries are automatically notified when assets become available after death certificate verification.</p>
+      </div>
+    </div>
+
+    <div class="landing-feature">
+      <div class="landing-feature__icon landing-feature__icon--red">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      </div>
+      <div>
+        <h4>Role-Based Access Control</h4>
+        <p>Assign Admin, Viewer, or Executor roles to each beneficiary. Granular permissions ensure assets are managed exactly as you intend.</p>
+      </div>
+    </div>
+
+    <div class="landing-feature">
+      <div class="landing-feature__icon landing-feature__icon--blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </div>
+      <div>
+        <h4>Legal Compliance Workflow</h4>
+        <p>Built-in consent forms, death registry integration, and a compliance dashboard ensure every transfer follows due process.</p>
+      </div>
+    </div>
+
+    <div class="landing-feature">
+      <div class="landing-feature__icon landing-feature__icon--green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div>
+        <h4>Failsafe Protection</h4>
+        <p>If all next of kin decline, your assets route to a pre-designated charity or government entity. Nothing gets left in limbo.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="landing-cta">
+  <div class="landing-cta__inner">
+    <h2>Start protecting your digital legacy today</h2>
+    <p>It takes less than 5 minutes to register and begin discovering your digital assets.</p>
+    <a href="{{ url_for('signup_page') }}" class="btn btn-lg" style="background:white;color:var(--brand);">Create your account</a>
+  </div>
+</div>
+
 {% endblock %}
