@@ -9,8 +9,10 @@ from __future__ import annotations
 import contextlib
 import json
 import os
+import re
 import socket
 import ssl
+import threading
 import time
 from collections.abc import Callable
 
@@ -20,9 +22,53 @@ from google_auth_oauthlib import flow as oauth_flow
 from googleapiclient import discovery
 from googleapiclient.errors import HttpError
 from src.backend.email_scanning.asset_identifier import (
-    classify_emails,
+    FINANCIAL_EVENTS,
+    classify_email,
     dedupe_providers,
 )
+
+_DOMAIN_RE = re.compile(r"@([\w.-]+)")
+
+
+def _normalize_provider_key(value: str) -> str:
+    """Normalize provider names for dedupe/skipping comparisons."""
+    normalized = re.sub(r"\s+", " ", (value or "").strip().lower())
+    if not normalized:
+        return ""
+    for suffix in (" bank", " inc", " llc", " ltd", " group", " holdings"):
+        if normalized.endswith(suffix):
+            normalized = normalized[: -len(suffix)].strip()
+    return normalized
+
+
+def _provider_skip_key_from_from_header(from_header: str) -> str:
+    """Build a deterministic skip key from the sender domain when available."""
+    if not from_header:
+        return ""
+
+    match = _DOMAIN_RE.search(from_header)
+    if not match:
+        return ""
+
+    domain = match.group(1).lower().strip(".")
+    return f"domain:{domain}" if domain else ""
+
+
+def _provider_name_key_from_from_header(from_header: str) -> str:
+    """Approximate provider key from sender domain root for early skipping."""
+    if not from_header:
+        return ""
+
+    match = _DOMAIN_RE.search(from_header)
+    if not match:
+        return ""
+
+    domain = match.group(1).lower().strip(".")
+    if not domain:
+        return ""
+
+    provider_guess = _normalize_provider_key(domain.split(".")[0].replace("-", " "))
+    return f"provider:{provider_guess}" if provider_guess else ""
 
 
 class EmailEvaluationError(Exception):
@@ -65,6 +111,20 @@ class EmailEvaluation:
         self.gmail_api_backoff_seconds = float(
             os.environ.get("GMAIL_API_BACKOFF_SECONDS", "1.0")
         )
+        self._provider_skip_keys: set[str] = set()
+        self._provider_skip_keys_lock = threading.Lock()
+
+    def _provider_skip_keys_snapshot(self) -> set[str]:
+        """Read a thread-safe copy of persisted provider skip keys."""
+        with self._provider_skip_keys_lock:
+            return set(self._provider_skip_keys)
+
+    def _merge_provider_skip_keys(self, keys: set[str]) -> None:
+        """Persist newly learned provider skip keys for future scan batches."""
+        if not keys:
+            return
+        with self._provider_skip_keys_lock:
+            self._provider_skip_keys.update(keys)
 
     def _ensure_client_secrets_file(self) -> None:
         if not os.path.exists(self.client_secrets_file):
@@ -442,6 +502,8 @@ class EmailEvaluation:
         findings = []
         next_page_token: str | None = None
         scanned_count = 0
+        skipped_provider_count = 0
+        seen_provider_keys = self._provider_skip_keys_snapshot()
 
         if progress_callback is not None:
             progress_callback(2, "Starting inbox scan...")
@@ -485,7 +547,39 @@ class EmailEvaluation:
                         chunk_start + classification_chunk_size, current_page_count
                     )
                     chunk = page_messages[chunk_start:chunk_end]
-                    chunk_findings = classify_emails(chunk)
+                    chunk_findings = []
+                    for email in chunk:
+                        domain_skip_key = _provider_skip_key_from_from_header(
+                            email.get("from", "")
+                        )
+                        provider_name_skip_key = _provider_name_key_from_from_header(
+                            email.get("from", "")
+                        )
+                        if (
+                            domain_skip_key and domain_skip_key in seen_provider_keys
+                        ) or (
+                            provider_name_skip_key
+                            and provider_name_skip_key in seen_provider_keys
+                        ):
+                            skipped_provider_count += 1
+                            continue
+
+                        finding = classify_email(email, categories=FINANCIAL_EVENTS)
+                        if finding is None:
+                            continue
+
+                        chunk_findings.append(finding)
+
+                        if domain_skip_key:
+                            seen_provider_keys.add(domain_skip_key)
+
+                        if provider_name_skip_key:
+                            seen_provider_keys.add(provider_name_skip_key)
+
+                        provider_key = _normalize_provider_key(finding.asset_provider)
+                        if provider_key:
+                            seen_provider_keys.add(f"provider:{provider_key}")
+
                     findings.extend(chunk_findings)
 
                     if findings_callback is not None and chunk_findings:
@@ -515,7 +609,13 @@ class EmailEvaluation:
                 progress = 95
                 if total_expected > 0:
                     progress = int(min(95, (scanned_count / total_expected) * 95))
-                progress_callback(progress, f"Scanned {scanned_count} inbox emails...")
+                progress_callback(
+                    progress,
+                    (
+                        f"Scanned {scanned_count} inbox emails "
+                        f"({skipped_provider_count} skipped due to provider dedupe)..."
+                    ),
+                )
 
             next_page_token = page.get("next_page_token")
             if not next_page_token:
@@ -528,7 +628,15 @@ class EmailEvaluation:
                 finding.asset_provider,
             )
 
+        self._merge_provider_skip_keys(seen_provider_keys)
+
         if progress_callback is not None:
-            progress_callback(100, f"Scan complete. {scanned_count} emails scanned.")
+            progress_callback(
+                100,
+                (
+                    f"Scan complete. {scanned_count} emails scanned, "
+                    f"{skipped_provider_count} skipped after provider identification."
+                ),
+            )
 
         return [finding.to_dict() for finding in findings]

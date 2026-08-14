@@ -131,6 +131,54 @@
       font-weight: 600;
       color: var(--color-text-muted);
     }
+
+    .scan-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .scan-limit {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--color-text-muted);
+      font-size: 13px;
+    }
+
+    .scan-limit input {
+      width: 90px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid var(--color-border);
+    }
+
+    .provider-summary {
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: #f9fbfe;
+      padding: 12px 14px;
+    }
+
+    .provider-summary h3 {
+      margin: 0 0 8px;
+      font-size: 14px;
+    }
+
+    .provider-summary ul {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 4px;
+      font-size: 14px;
+    }
+
+    .provider-summary p {
+      margin: 0;
+      color: var(--color-text-muted);
+      font-size: 13px;
+    }
   </style>
 </head>
 <body>
@@ -154,8 +202,13 @@
     </header>
 
     <section class="panel" style="display: grid; gap: 14px;">
-      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+      <div class="scan-controls">
         <button id="scan-trigger" class="btn btn--primary" type="button">Scan Inbox</button>
+        <label for="scan-limit" class="scan-limit">
+          Run scope
+          <input id="scan-limit" type="number" min="1" step="1" value="300" />
+          emails
+        </label>
         <a href="{{ url_for('scan_email') }}" class="btn btn--ghost">Back</a>
       </div>
 
@@ -170,6 +223,12 @@
       </div>
 
       <p id="scan-error" class="result-banner result-banner--error"></p>
+
+      <section class="provider-summary">
+        <h3>Confirmed Asset Providers</h3>
+        <p id="provider-empty">No providers confirmed yet.</p>
+        <ul id="provider-list" style="display: none;"></ul>
+      </section>
 
       <div id="findings-container" class="email-list"></div>
       <p id="empty-findings" style="display: none;">No qualifying digital-asset findings were returned.</p>

@@ -6,10 +6,14 @@ const scanFill = document.getElementById("scan-fill");
 const scanError = document.getElementById("scan-error");
 const findingsContainer = document.getElementById("findings-container");
 const emptyFindings = document.getElementById("empty-findings");
+const scanLimitInput = document.getElementById("scan-limit");
+const providerEmpty = document.getElementById("provider-empty");
+const providerList = document.getElementById("provider-list");
 
 let activePollTimer = null;
 const renderedFindingIds = new Set();
 const findingDecisions = new Map();
+const findingProviderById = new Map();
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -32,6 +36,9 @@ function clearResults() {
   findingsContainer.innerHTML = "";
   emptyFindings.style.display = "none";
   renderedFindingIds.clear();
+  findingDecisions.clear();
+  findingProviderById.clear();
+  renderConfirmedProviders();
 }
 
 function findingUniqueId(finding, indexHint = 0) {
@@ -100,6 +107,8 @@ function appendFindings(findings) {
     if (renderedFindingIds.has(uid)) {
       return;
     }
+
+    findingProviderById.set(uid, String(finding.asset_provider || "").trim());
     renderedFindingIds.add(uid);
     newCards.push(findingCardHtml(finding));
   });
@@ -129,6 +138,31 @@ function showError(message) {
 function clearError() {
   scanError.textContent = "";
   scanError.style.display = "none";
+}
+
+function renderConfirmedProviders() {
+  const providers = new Set();
+  findingDecisions.forEach((decision, findingId) => {
+    if (decision !== "confirm") {
+      return;
+    }
+    const provider = findingProviderById.get(findingId) || "";
+    if (provider) {
+      providers.add(provider);
+    }
+  });
+
+  const deduped = [...providers].sort((a, b) => a.localeCompare(b));
+  if (deduped.length === 0) {
+    providerList.style.display = "none";
+    providerList.innerHTML = "";
+    providerEmpty.style.display = "block";
+    return;
+  }
+
+  providerList.innerHTML = deduped.map((name) => `<li>${escapeHtml(name)}</li>`).join("");
+  providerList.style.display = "grid";
+  providerEmpty.style.display = "none";
 }
 
 function applyDecisionState(card, decision) {
@@ -170,6 +204,7 @@ findingsContainer.addEventListener("click", (event) => {
 
   findingDecisions.set(findingId, nextDecision);
   applyDecisionState(card, nextDecision);
+  renderConfirmedProviders();
 });
 
 async function pollScanStatus(sessionId) {
@@ -215,13 +250,16 @@ async function startEmailScan() {
   clearResults();
   setProgress(0, "Starting inbox scan...");
 
+  const parsedLimit = Number.parseInt(scanLimitInput?.value || "", 10);
+  const maxResults = Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : 300;
+
   try {
     const response = await fetch("/api/email-scan/start", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ max_results: 0 }),
+      body: JSON.stringify({ max_results: maxResults }),
     });
     const data = await response.json();
 
