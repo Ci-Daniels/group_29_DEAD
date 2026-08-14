@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Estate Access · Inbox Preview</title>
+  <title>Estate Access · Asset Findings</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
@@ -37,6 +37,148 @@
       font-size: 14px;
       line-height: 1.45;
     }
+
+    .badge {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #eef6ff;
+      color: #24508f;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .progress-wrap {
+      display: none;
+      gap: 8px;
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--color-text-muted);
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: #e6edf7;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #1f9d8f 0%, #24508f 100%);
+      transition: width 0.25s ease;
+    }
+
+    .result-banner {
+      display: none;
+    }
+
+    .decision-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .decision-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      border: 1px solid var(--color-border);
+      background: #fff;
+      color: var(--color-text);
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .decision-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .decision-btn[data-decision="confirm"] {
+      color: #0f7a53;
+      border-color: #7bc6aa;
+    }
+
+    .decision-btn[data-decision="deny"] {
+      color: #a23a3a;
+      border-color: #d4a0a0;
+    }
+
+    .decision-btn.is-active {
+      background: #eaf8f1;
+      border-color: #0f7a53;
+      box-shadow: 0 0 0 2px rgba(15, 122, 83, 0.15);
+    }
+
+    .decision-btn[data-decision="deny"].is-active {
+      background: #fff0f0;
+      border-color: #a23a3a;
+      box-shadow: 0 0 0 2px rgba(162, 58, 58, 0.15);
+    }
+
+    .decision-state {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-text-muted);
+    }
+
+    .scan-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .scan-limit {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--color-text-muted);
+      font-size: 13px;
+    }
+
+    .scan-limit input {
+      width: 90px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid var(--color-border);
+    }
+
+    .provider-summary {
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: #f9fbfe;
+      padding: 12px 14px;
+    }
+
+    .provider-summary h3 {
+      margin: 0 0 8px;
+      font-size: 14px;
+    }
+
+    .provider-summary ul {
+      margin: 0;
+      padding-left: 18px;
+      display: grid;
+      gap: 4px;
+      font-size: 14px;
+    }
+
+    .provider-summary p {
+      margin: 0;
+      color: var(--color-text-muted);
+      font-size: 13px;
+    }
   </style>
 </head>
 <body>
@@ -55,37 +197,44 @@
 
   <main class="page">
     <header class="page__header">
-      <h1>Inbox Preview</h1>
-      <p class="page__subtitle">Showing up to the first 10 emails from your inbox.</p>
+      <h1>Digital Asset Findings</h1>
+      <p class="page__subtitle">Showing inbox emails classified as potential digital or financial assets.</p>
     </header>
 
     <section class="panel" style="display: grid; gap: 14px;">
-      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <a href="{{ url_for('emails_page') }}" class="btn btn--primary">Refresh</a>
+      <div class="scan-controls">
+        <button id="scan-trigger" class="btn btn--primary" type="button">Scan Inbox</button>
+        <label for="scan-limit" class="scan-limit">
+          Run scope
+          <input id="scan-limit" type="number" min="1" step="1" value="300" />
+          emails
+        </label>
         <a href="{{ url_for('scan_email') }}" class="btn btn--ghost">Back</a>
       </div>
 
-      {% if error_message %}
-        <p class="result-banner result-banner--error" style="display: block;">
-          {{ error_message }}
-        </p>
-      {% elif messages %}
-        <div class="email-list">
-          {% for message in messages %}
-            <article class="email-item">
-              <h2 class="email-item__subject">{{ message.subject or '(No Subject)' }}</h2>
-              <p class="email-item__meta">
-                From: {{ message.from or 'Unknown sender' }}<br>
-                Date: {{ message.date or 'Unknown date' }}
-              </p>
-              <p class="email-item__snippet">{{ message.snippet or 'No preview available.' }}</p>
-            </article>
-          {% endfor %}
+      <div id="scan-progress" class="progress-wrap">
+        <div class="progress-meta">
+          <span id="scan-status">Starting scan...</span>
+          <span id="scan-percent">0%</span>
         </div>
-      {% else %}
-        <p>No inbox emails were returned.</p>
-      {% endif %}
+        <div class="progress-track">
+          <div id="scan-fill" class="progress-fill"></div>
+        </div>
+      </div>
+
+      <p id="scan-error" class="result-banner result-banner--error"></p>
+
+      <section class="provider-summary">
+        <h3>Confirmed Asset Providers</h3>
+        <p id="provider-empty">No providers confirmed yet.</p>
+        <ul id="provider-list" style="display: none;"></ul>
+      </section>
+
+      <div id="findings-container" class="email-list"></div>
+      <p id="empty-findings" style="display: none;">No qualifying digital-asset findings were returned.</p>
     </section>
   </main>
+
+  <script src="{{ url_for('static', filename='js/emails.js') }}"></script>
 </body>
 </html>

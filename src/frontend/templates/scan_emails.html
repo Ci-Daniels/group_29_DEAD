@@ -26,14 +26,14 @@
     <main class="page">
         <header class="page__header">
             <h1>Scan Gmail</h1>
-            <p class="page__subtitle">Connect and preview your most recent inbox emails.</p>
+            <p class="page__subtitle">Connect and scan your inbox for digital-asset findings.</p>
         </header>
 
         <section class="panel" style="max-width: 700px;">
             {% if gmail_connected %}
                 <p>Your Gmail account is connected.</p>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <a href="{{ url_for('emails_page') }}" class="btn btn--primary">View First 10 Emails</a>
+                    <a href="{{ url_for('emails_page') }}" class="btn btn--primary">View Asset Findings</a>
                     <a href="{{ url_for('logout_google') }}" class="btn btn--ghost">Disconnect Gmail</a>
                 </div>
             {% else %}
