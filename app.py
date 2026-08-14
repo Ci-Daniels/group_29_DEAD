@@ -105,6 +105,46 @@ if GOOGLE_OAUTH_REDIRECT_URI.startswith(("http://127.0.0.1", "http://localhost")
 
 
 # --------------------------------------------------------------------------
+# Role-Based Access Control (RBAC)
+# --------------------------------------------------------------------------
+
+def require_role(*allowed_roles):
+    """Decorator to restrict endpoint access by user role.
+    
+    Usage:
+        @app.route("/admin/users")
+        @require_role("admin")
+        def admin_users():
+            ...
+    """
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            user_role = session.get("user_role")
+            user_id = session.get("user_id")
+            
+            if not user_id or not user_role:
+                return jsonify({"error": "Unauthorized. Please log in."}), 401
+            
+            if user_role not in allowed_roles:
+                return jsonify({"error": "Forbidden. Insufficient permissions."}), 403
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+
+def log_audit(actor_id: str, action: str):
+    """Log an action to the audit log for admin tracking."""
+    try:
+        audit = AuditLog(user_id=actor_id, actor=actor_id, action=action)
+        db.session.add(audit)
+        db.session.commit()
+    except Exception as e:
+        print(f"Warning: Failed to log audit: {e}")
+
+
+# --------------------------------------------------------------------------
 # Shared AI components
 # --------------------------------------------------------------------------
 
@@ -989,6 +1029,108 @@ def api_login():
             "full_name": user.full_name,
             "country": user.country,
             "national_id": user.national_id,
+            "email": user.email,
+            "role": user.role,
+        },
+    }), 200
+
+
+@app.route("/api/logout", methods=["POST"])
+def api_logout():
+    """Logout endpoint: clears the user session."""
+    user_id = session.get("user_id")
+    if user_id:
+        log_audit(user_id, f"User logged out")
+    
+    session.clear()
+    return jsonify({"message": "Logout successful."}), 200
+
+
+# --------------------------------------------------------------------------
+# Admin-Only Endpoints
+# --------------------------------------------------------------------------
+
+@app.route("/api/admin/users", methods=["GET"])
+@require_role("admin")
+def admin_list_users():
+    """Admin endpoint: list all users in the system."""
+    admin_id = session.get("user_id")
+    log_audit(admin_id, "Admin viewed all users")
+    
+    users = User.query.all()
+    return jsonify({
+        "count": len(users),
+        "users": [
+            {
+                "id": u.id,
+                "full_name": u.full_name,
+                "email": u.email,
+                "country": u.country,
+                "role": u.role,
+                "created_at": u.created_at.isoformat() if u.created_at else None,
+                "is_deceased": u.is_deceased,
+            }
+            for u in users
+        ],
+    }), 200
+
+
+@app.route("/api/admin/logs", methods=["GET"])
+@require_role("admin")
+def admin_view_logs():
+    """Admin endpoint: view audit logs."""
+    admin_id = session.get("user_id")
+    log_audit(admin_id, "Admin viewed audit logs")
+    
+    # Get optional query parameter for filtering by user_id
+    user_id_filter = request.args.get("user_id")
+    
+    if user_id_filter:
+        logs = AuditLog.query.filter_by(user_id=user_id_filter).all()
+    else:
+        logs = AuditLog.query.all()
+    
+    return jsonify({
+        "count": len(logs),
+        "logs": [
+            {
+                "id": log.id,
+                "user_id": log.user_id,
+                "actor": log.actor,
+                "action": log.action,
+                "created_at": log.created_at.isoformat() if log.created_at else None,
+            }
+            for log in logs
+        ],
+    }), 200
+
+
+@app.route("/api/admin/users/<user_id>/role", methods=["PATCH"])
+@require_role("admin")
+def admin_update_user_role(user_id):
+    """Admin endpoint: update a user's role."""
+    admin_id = session.get("user_id")
+    data = request.get_json(silent=True) or {}
+    
+    new_role = (data.get("role") or "").strip().lower()
+    
+    if new_role not in ["user", "admin"]:
+        return jsonify({"error": "Role must be 'user' or 'admin'."}), 400
+    
+    user = User.query.filter_by(id=user_id).first()
+    if not user:
+        return jsonify({"error": "User not found."}), 404
+    
+    old_role = user.role
+    user.role = new_role
+    db.session.commit()
+    
+    log_audit(admin_id, f"Admin changed user {user_id} role from {old_role} to {new_role}")
+    
+    return jsonify({
+        "message": f"User role updated to {new_role}.",
+        "user": {
+            "id": user.id,
             "email": user.email,
             "role": user.role,
         },
