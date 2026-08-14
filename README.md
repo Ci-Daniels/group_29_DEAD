@@ -173,6 +173,40 @@ source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+## Commit Email-Scanning Models To GitHub
+
+The email classifier models can be downloaded into this repository and pushed
+to GitHub using Git LFS.
+
+1. Install and enable Git LFS (one-time on your machine):
+
+```bash
+git lfs install
+```
+
+1. Download/cache the models into the repo-local model directory:
+
+```bash
+python -m src.backend.email_scanning.preload_models --download
+```
+
+This command stores model files under:
+
+```text
+src/backend/email_scanning/assets/models/
+```
+
+1. Commit and push:
+
+```bash
+git add .gitattributes src/backend/email_scanning/assets/models
+git commit -m "Add local email-scanning model cache"
+git push
+```
+
+Note: model files are large, so they are tracked via Git LFS in
+`.gitattributes`.
+
 The first run downloads InsightFace's `buffalo_l` model pack, which bundles the SCRFD detector, the ArcFace recognition model, and a facial landmark model, automatically to a local cache directory.
 
 ## Usage
